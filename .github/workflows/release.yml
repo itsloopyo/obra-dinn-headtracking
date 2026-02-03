@@ -1,0 +1,20 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    uses: itsloopyo/cameraunlock-core/.github/workflows/release-bepinex-mod.yml@main
+    with:
+      csproj-path: src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj
+      project-name: "Head Tracking for Return of the Obra Dinn"
+      build-output-dir: src/ObraDinnHeadTracking/bin/Release/net35
+      mod-name: ObraDinnHeadTracking
+      mod-dlls: "ObraDinnHeadTracking.dll CameraUnlock.Core.dll CameraUnlock.Core.Unity.dll"
+      artifact-paths: "src/ObraDinnHeadTracking/ cameraunlock-core scripts/install.cmd scripts/uninstall.cmd prebuilt/"
+      prebuilt-dir: prebuilt
+    permissions:
+      contents: write
