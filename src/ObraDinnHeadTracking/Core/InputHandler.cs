@@ -28,6 +28,11 @@ namespace HeadTracking.Core
         public event Action OnToggleReticlePressed;
 
         /// <summary>
+        /// Fired when toggle position key is pressed.
+        /// </summary>
+        public event Action OnTogglePositionPressed;
+
+        /// <summary>
         /// The currently configured toggle key.
         /// </summary>
         public KeyCode ToggleKey => _config.ToggleKey.Value;
@@ -41,6 +46,11 @@ namespace HeadTracking.Core
         /// The currently configured toggle reticle key.
         /// </summary>
         public KeyCode ToggleReticleKey => _config.ToggleReticleKey.Value;
+
+        /// <summary>
+        /// The currently configured toggle position key.
+        /// </summary>
+        public KeyCode TogglePositionKey => _config.TogglePositionKey.Value;
 
         public InputHandler(ConfigManager config)
         {
@@ -65,6 +75,11 @@ namespace HeadTracking.Core
             if (Input.GetKeyDown(_config.ToggleReticleKey.Value))
             {
                 OnToggleReticlePressed?.Invoke();
+            }
+
+            if (Input.GetKeyDown(_config.TogglePositionKey.Value))
+            {
+                OnTogglePositionPressed?.Invoke();
             }
         }
     }

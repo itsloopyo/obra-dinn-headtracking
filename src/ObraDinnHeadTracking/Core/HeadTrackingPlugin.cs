@@ -39,6 +39,11 @@ namespace HeadTracking.Core
         /// </summary>
         public bool TrackingEnabled { get; private set; }
 
+        /// <summary>
+        /// The camera controller, exposed for Harmony patch access.
+        /// </summary>
+        public CameraController CameraController => _cameraController;
+
         // Harmony instance for patching
         private Harmony _harmony;
 
@@ -47,6 +52,8 @@ namespace HeadTracking.Core
         private OpenTrackReceiver _receiver;
         private TrackingProcessor _processor;
         private PoseInterpolator _interpolator;
+        private PositionProcessor _positionProcessor;
+        private PositionInterpolator _positionInterpolator;
         private CameraController _cameraController;
         private GameStateDetector _gameStateDetector;
         private InputHandler _inputHandler;
@@ -70,6 +77,7 @@ namespace HeadTracking.Core
 
             // Try to apply game-specific patches
             MouseLookPatches.ApplyPatch(_harmony);
+            HeadMotionPatch.ApplyPatch(_harmony);
 
             // Initialize configuration (needed before framerate patch)
             _config = new ConfigManager();
@@ -94,7 +102,28 @@ namespace HeadTracking.Core
                 Deadzone = DeadzoneSettings.None
             };
             _interpolator = new PoseInterpolator();
-            _cameraController = new CameraController(_receiver, _processor, _interpolator);
+            _positionProcessor = new PositionProcessor
+            {
+                Settings = new PositionSettings(
+                    _config.PositionSensitivityX.Value,
+                    _config.PositionSensitivityY.Value,
+                    _config.PositionSensitivityZ.Value,
+                    _config.PositionLimitX.Value,
+                    _config.PositionLimitY.Value,
+                    _config.PositionLimitZ.Value,
+                    _config.PositionSmoothing.Value,
+                    invertX: true, invertY: false, invertZ: true
+                ),
+                NeckModelSettings = new NeckModelSettings(
+                    _config.NeckModelEnabled.Value,
+                    _config.NeckModelHeight.Value,
+                    _config.NeckModelForward.Value
+                )
+            };
+            _positionInterpolator = new PositionInterpolator();
+            _cameraController = new CameraController(
+                _receiver, _processor, _interpolator,
+                _positionProcessor, _positionInterpolator);
             _gameStateDetector = new GameStateDetector();
             _inputHandler = new InputHandler(_config);
             _notificationUI = new NotificationUI();
@@ -113,10 +142,14 @@ namespace HeadTracking.Core
                 shouldDraw: () => _gameStateDetector.IsGameplayActive && _reticleEnabled && _cameraController.IsApplyingTracking
             );
 
+            // Initialize position enabled from config
+            _cameraController.PositionEnabled = _config.PositionEnabled.Value;
+
             // Subscribe to input events
             _inputHandler.OnTogglePressed += HandleToggle;
             _inputHandler.OnRecenterPressed += HandleRecenter;
             _inputHandler.OnToggleReticlePressed += HandleToggleReticle;
+            _inputHandler.OnTogglePositionPressed += HandleTogglePosition;
 
             // Subscribe to game state changes
             _gameStateDetector.StateChanged += OnGameStateChanged;
@@ -141,7 +174,7 @@ namespace HeadTracking.Core
             // Show startup notification if enabled
             if (_config.ShowStartupNotification.Value)
             {
-                string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.RecenterKey}] Recenter, [{_inputHandler.ToggleReticleKey}] Reticle";
+                string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.RecenterKey}] Recenter, [{_inputHandler.ToggleReticleKey}] Reticle, [{_inputHandler.TogglePositionKey}] Position";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{statusInfo}\n{keyInfo}", 4f);
             }
@@ -202,6 +235,7 @@ namespace HeadTracking.Core
             _inputHandler.OnTogglePressed -= HandleToggle;
             _inputHandler.OnRecenterPressed -= HandleRecenter;
             _inputHandler.OnToggleReticlePressed -= HandleToggleReticle;
+            _inputHandler.OnTogglePositionPressed -= HandleTogglePosition;
             _gameStateDetector.StateChanged -= OnGameStateChanged;
             CameraPatches.OnSceneLoaded -= OnSceneLoadedPatch;
             CameraPatches.OnCameraChanged -= OnCameraChangedPatch;
@@ -240,6 +274,8 @@ namespace HeadTracking.Core
             var rawPose = _receiver.GetLatestPose();
             _processor.RecenterTo(rawPose);
             _interpolator.Reset();
+            _positionProcessor.SetCenter(_receiver.GetLatestPosition());
+            _positionInterpolator.Reset();
             _notificationUI.ShowRecentered();
             Logger.LogInfo("Head tracking recentered");
         }
@@ -258,6 +294,21 @@ namespace HeadTracking.Core
                 _notificationUI.ShowNotification("Reticle: OFF", NotificationType.Warning, 1.5f);
             }
             Logger.LogInfo($"Reticle {(_reticleEnabled ? "enabled" : "disabled")}");
+        }
+
+        private void HandleTogglePosition()
+        {
+            _cameraController.PositionEnabled = !_cameraController.PositionEnabled;
+
+            if (_cameraController.PositionEnabled)
+            {
+                _notificationUI.ShowNotification("Position: ON", NotificationType.Success, 1.5f);
+            }
+            else
+            {
+                _notificationUI.ShowNotification("Position: OFF", NotificationType.Warning, 1.5f);
+            }
+            Logger.LogInfo($"Position tracking {(_cameraController.PositionEnabled ? "enabled" : "disabled")}");
         }
 
         /// <summary>

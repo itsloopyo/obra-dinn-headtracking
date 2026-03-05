@@ -6,7 +6,8 @@ An **unofficial** BepInEx mod that adds head tracking support to Return of the O
 
 ## Features
 
-- **3DOF head tracking**: Yaw, pitch, and roll via OpenTrack UDP protocol
+- **6DOF head tracking**: Yaw, pitch, roll rotation plus positional tracking (lean in/out/side-to-side) via OpenTrack UDP protocol
+- **Neck model**: Simulates realistic head rotation around the neck pivot, so tilting your head moves your eyes along a natural arc
 - **Framerate unlock**: Optional removal of the game's 60 FPS cap for smoother tracking
 - **Aim reticle**: Shows where your mouse is aiming when head tracking moves the camera
 
@@ -38,6 +39,7 @@ The installer automatically finds your game by checking the Windows registry for
 | **Home** | Recenter (set current head position as neutral) |
 | **End** | Toggle head tracking on/off |
 | **Insert** | Toggle aim reticle on/off |
+| **Page Up** | Toggle positional tracking on/off |
 
 ## Configuration
 
@@ -62,6 +64,7 @@ The mod creates a configuration file at `BepInEx/config/com.headtracking.obradin
 | ToggleKey | End | Key to toggle tracking |
 | RecenterKey | Home | Key to recenter |
 | ToggleReticleKey | Insert | Key to toggle aim reticle |
+| TogglePositionKey | PageUp | Key to toggle positional tracking |
 
 ### Network
 | Setting | Default | Description |
@@ -79,6 +82,25 @@ The mod creates a configuration file at `BepInEx/config/com.headtracking.obradin
 | Setting | Default | Range | Description |
 |---------|---------|-------|-------------|
 | Smoothing | 0.0 | 0.0-1.0 | Smoothing factor (higher = smoother but adds latency) |
+
+### Position
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| PositionEnabled | true | | Enable positional tracking (lean in/out/side-to-side) |
+| PositionSensitivityX | 2.0 | 0.0-3.0 | Lateral (left/right) position multiplier |
+| PositionSensitivityY | 2.0 | 0.0-3.0 | Vertical (up/down) position multiplier |
+| PositionSensitivityZ | 2.0 | 0.0-3.0 | Depth (forward/back) position multiplier |
+| PositionLimitX | 0.30 | 0.01-0.5 | Max lateral displacement in meters |
+| PositionLimitY | 0.20 | 0.01-0.5 | Max vertical displacement in meters |
+| PositionLimitZ | 0.40 | 0.01-0.5 | Max depth displacement in meters |
+| PositionSmoothing | 0.15 | 0.0-1.0 | Position smoothing factor |
+
+### Neck Model
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| NeckModelEnabled | true | | Simulate head rotating around neck pivot |
+| NeckModelHeight | 0.10 | 0.0-0.25 | Vertical distance from neck to eyes (meters) |
+| NeckModelForward | 0.05 | 0.0-0.20 | Forward distance from neck to eyes (meters) |
 
 ## OpenTrack Setup
 

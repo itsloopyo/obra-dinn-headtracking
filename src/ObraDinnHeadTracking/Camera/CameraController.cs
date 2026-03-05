@@ -1,3 +1,4 @@
+using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Math;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
@@ -17,11 +18,14 @@ namespace HeadTracking.Camera
         private readonly OpenTrackReceiver _receiver;
         private readonly TrackingProcessor _processor;
         private readonly PoseInterpolator _interpolator;
+        private readonly PositionProcessor _positionProcessor;
+        private readonly PositionInterpolator _positionInterpolator;
 
         private UnityEngine.Camera _camera;
         private float _lastTrackingYaw;
         private float _lastTrackingPitch;
         private float _lastTrackingRoll;
+        private Vec3 _lastTrackingPosition;
         private bool _wasApplyingTracking;
         private bool _isTransitioningOut;
         private float _transitionProgress;
@@ -35,6 +39,16 @@ namespace HeadTracking.Camera
         private int _resolvedFrame = -1;
         private Transform _resolvedTransform;
         private UnityEngine.Camera _resolvedCamera;
+
+        // Position offset is stored here and applied by HeadMotionPatch postfix,
+        // which fires after HeadMotion.LateUpdate writes its final localPosition.
+        private Vec3 _pendingPositionOffset;
+        private bool _hasPendingPosition;
+
+        /// <summary>
+        /// Whether positional tracking (lean/neck model) is enabled.
+        /// </summary>
+        public bool PositionEnabled { get; set; } = true;
 
         /// <summary>
         /// Whether tracking is currently being applied.
@@ -68,11 +82,33 @@ namespace HeadTracking.Camera
             }
         }
 
-        public CameraController(OpenTrackReceiver receiver, TrackingProcessor processor, PoseInterpolator interpolator)
+        public CameraController(
+            OpenTrackReceiver receiver, TrackingProcessor processor, PoseInterpolator interpolator,
+            PositionProcessor positionProcessor, PositionInterpolator positionInterpolator)
         {
             _receiver = receiver;
             _processor = processor;
             _interpolator = interpolator;
+            _positionProcessor = positionProcessor;
+            _positionInterpolator = positionInterpolator;
+        }
+
+        /// <summary>
+        /// Called by HeadMotionPatch postfix after HeadMotion.LateUpdate writes its final localPosition.
+        /// Adds our tracking position offset on top of the game's head bob / wave / crouch offsets.
+        /// </summary>
+        public void ApplyPendingPosition(Transform headMotionTransform)
+        {
+            if (!_hasPendingPosition)
+            {
+                return;
+            }
+
+            var gamePos = headMotionTransform.localPosition;
+            headMotionTransform.localPosition = gamePos + new Vector3(
+                _pendingPositionOffset.X, _pendingPositionOffset.Y, _pendingPositionOffset.Z);
+
+            _hasPendingPosition = false;
         }
 
         /// <summary>
@@ -109,6 +145,8 @@ namespace HeadTracking.Camera
                     _transitionInProgress = 0f;
                     _interpolator.Reset();
                     _processor.ResetSmoothing();
+                    _positionInterpolator.Reset();
+                    _positionProcessor.ResetSmoothing();
                 }
 
                 // Apply tracking with transition-in scaling if needed
@@ -152,6 +190,8 @@ namespace HeadTracking.Camera
         {
             _processor.ResetSmoothing();
             _interpolator.Reset();
+            _positionProcessor.ResetSmoothing();
+            _positionInterpolator.Reset();
             _isTransitioningOut = false;
             // Don't reset tracking values - allows smooth re-enable if head hasn't moved
         }
@@ -180,8 +220,13 @@ namespace HeadTracking.Camera
             _lastTrackingYaw = 0f;
             _lastTrackingPitch = 0f;
             _lastTrackingRoll = 0f;
+            _lastTrackingPosition = Vec3.Zero;
+            _pendingPositionOffset = Vec3.Zero;
+            _hasPendingPosition = false;
             _processor.ResetSmoothing();
             _interpolator.Reset();
+            _positionProcessor.Reset();
+            _positionInterpolator.Reset();
             _resolvedFrame = -1;
         }
 
@@ -268,6 +313,24 @@ namespace HeadTracking.Camera
 
             ApplyComposedRotation(cameraTransform, currentLocal.x, trackingYaw, trackingPitch, trackingRoll);
 
+            // Position processing: tracker position + neck model
+            if (PositionEnabled)
+            {
+                var rawPos = _receiver.GetLatestPosition();
+                var interpolatedPos = _positionInterpolator.Update(rawPos, Time.deltaTime);
+
+                // Build rotation quaternion from final tracking values (same as used for localRotation)
+                var headRotQ = QuaternionUtils.FromYawPitchRoll(trackingYaw, -trackingPitch, trackingRoll);
+                var finalPos = _positionProcessor.Process(interpolatedPos, headRotQ, isRemote, Time.deltaTime);
+
+                // Scale position by transition factor — don't apply directly,
+                // store for onPreCull which fires after all game LateUpdates
+                Vec3 scaledPos = finalPos * scale;
+                _pendingPositionOffset = scaledPos;
+                _hasPendingPosition = true;
+                _lastTrackingPosition = scaledPos;
+            }
+
             // Store for fade-out transition
             _lastTrackingYaw = trackingYaw;
             _lastTrackingPitch = trackingPitch;
@@ -297,9 +360,10 @@ namespace HeadTracking.Camera
 
             if (_transitionProgress >= 1f)
             {
-                // Transition complete - reset camera local yaw/roll to zero
+                // Transition complete - reset camera local yaw/roll to zero, no position offset
                 _isTransitioningOut = false;
                 _wasApplyingTracking = false;
+                _hasPendingPosition = false;
                 var euler = cameraTransform.localEulerAngles;
                 cameraTransform.localEulerAngles = new Vector3(euler.x, 0f, 0f);
                 return;
@@ -310,6 +374,11 @@ namespace HeadTracking.Camera
             float fadedYaw = Mathf.Lerp(_lastTrackingYaw, 0f, _transitionProgress);
             float fadedPitch = Mathf.Lerp(_lastTrackingPitch, 0f, _transitionProgress);
             float fadedRoll = Mathf.Lerp(_lastTrackingRoll, 0f, _transitionProgress);
+
+            // Queue faded position for onPreCull application
+            Vec3 fadedPos = Vec3.Lerp(_lastTrackingPosition, Vec3.Zero, _transitionProgress);
+            _pendingPositionOffset = fadedPos;
+            _hasPendingPosition = true;
 
             // Apply faded tracking to camera using quaternion composition (matches ApplyTracking)
             var currentLocal = cameraTransform.localEulerAngles;

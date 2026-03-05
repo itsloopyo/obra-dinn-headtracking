@@ -17,6 +17,7 @@ namespace HeadTracking.Config
         public ConfigEntry<KeyCode> ToggleKey { get; private set; }
         public ConfigEntry<KeyCode> RecenterKey { get; private set; }
         public ConfigEntry<KeyCode> ToggleReticleKey { get; private set; }
+        public ConfigEntry<KeyCode> TogglePositionKey { get; private set; }
 
         // UI settings
         public ConfigEntry<bool> ShowConnectionNotifications { get; private set; }
@@ -32,6 +33,21 @@ namespace HeadTracking.Config
 
         // Smoothing settings
         public ConfigEntry<float> Smoothing { get; private set; }
+
+        // Position settings
+        public ConfigEntry<bool> PositionEnabled { get; private set; }
+        public ConfigEntry<float> PositionSensitivityX { get; private set; }
+        public ConfigEntry<float> PositionSensitivityY { get; private set; }
+        public ConfigEntry<float> PositionSensitivityZ { get; private set; }
+        public ConfigEntry<float> PositionLimitX { get; private set; }
+        public ConfigEntry<float> PositionLimitY { get; private set; }
+        public ConfigEntry<float> PositionLimitZ { get; private set; }
+        public ConfigEntry<float> PositionSmoothing { get; private set; }
+
+        // Neck model settings
+        public ConfigEntry<bool> NeckModelEnabled { get; private set; }
+        public ConfigEntry<float> NeckModelHeight { get; private set; }
+        public ConfigEntry<float> NeckModelForward { get; private set; }
 
         /// <summary>
         /// Initialize all configuration entries. Must be called in plugin Awake().
@@ -97,6 +113,13 @@ namespace HeadTracking.Config
                 "Key to toggle the aim reticle on/off"
             );
 
+            TogglePositionKey = config.Bind(
+                "Keybindings",
+                "TogglePositionKey",
+                KeyCode.PageUp,
+                "Key to toggle positional tracking on/off (lean/neck model)"
+            );
+
             // Network section
             UDPPort = config.Bind(
                 "Network",
@@ -149,6 +172,112 @@ namespace HeadTracking.Config
                     "Higher values reduce jitter but add latency. " +
                     "Remote connections automatically use a minimum of 0.1 for network latency compensation.",
                     new AcceptableValueRange<float>(0f, 1f)
+                )
+            );
+
+            // Position section
+            PositionEnabled = config.Bind(
+                "Position",
+                "PositionEnabled",
+                true,
+                "Enable positional tracking (lean in/out/side-to-side)"
+            );
+
+            PositionSensitivityX = config.Bind(
+                "Position",
+                "PositionSensitivityX",
+                2.0f,
+                new ConfigDescription(
+                    "Multiplier for lateral (left/right) position",
+                    new AcceptableValueRange<float>(0f, 3.0f)
+                )
+            );
+
+            PositionSensitivityY = config.Bind(
+                "Position",
+                "PositionSensitivityY",
+                2.0f,
+                new ConfigDescription(
+                    "Multiplier for vertical (up/down) position",
+                    new AcceptableValueRange<float>(0f, 3.0f)
+                )
+            );
+
+            PositionSensitivityZ = config.Bind(
+                "Position",
+                "PositionSensitivityZ",
+                2.0f,
+                new ConfigDescription(
+                    "Multiplier for depth (forward/back) position",
+                    new AcceptableValueRange<float>(0f, 3.0f)
+                )
+            );
+
+            PositionLimitX = config.Bind(
+                "Position",
+                "PositionLimitX",
+                0.30f,
+                new ConfigDescription(
+                    "Maximum lateral displacement in meters (prevents wall clipping)",
+                    new AcceptableValueRange<float>(0.01f, 0.5f)
+                )
+            );
+
+            PositionLimitY = config.Bind(
+                "Position",
+                "PositionLimitY",
+                0.20f,
+                new ConfigDescription(
+                    "Maximum vertical displacement in meters",
+                    new AcceptableValueRange<float>(0.01f, 0.5f)
+                )
+            );
+
+            PositionLimitZ = config.Bind(
+                "Position",
+                "PositionLimitZ",
+                0.40f,
+                new ConfigDescription(
+                    "Maximum depth displacement in meters (prevents wall clipping)",
+                    new AcceptableValueRange<float>(0.01f, 0.5f)
+                )
+            );
+
+            PositionSmoothing = config.Bind(
+                "Position",
+                "PositionSmoothing",
+                0.15f,
+                new ConfigDescription(
+                    "Smoothing for positional tracking (0 = instant, 1 = very slow)",
+                    new AcceptableValueRange<float>(0f, 1f)
+                )
+            );
+
+            // Neck Model section
+            NeckModelEnabled = config.Bind(
+                "Neck Model",
+                "NeckModelEnabled",
+                true,
+                "Enable neck model simulation (head rotates around neck, not eye center)"
+            );
+
+            NeckModelHeight = config.Bind(
+                "Neck Model",
+                "NeckModelHeight",
+                0.10f,
+                new ConfigDescription(
+                    "Vertical distance from neck pivot to eyes in meters",
+                    new AcceptableValueRange<float>(0f, 0.25f)
+                )
+            );
+
+            NeckModelForward = config.Bind(
+                "Neck Model",
+                "NeckModelForward",
+                0.05f,
+                new ConfigDescription(
+                    "Forward distance from neck pivot to eyes in meters",
+                    new AcceptableValueRange<float>(0f, 0.20f)
                 )
             );
         }
