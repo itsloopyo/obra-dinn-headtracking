@@ -94,6 +94,7 @@ The mod creates a configuration file at `BepInEx/config/com.headtracking.obradin
 | PositionLimitY | 0.20 | 0.01-0.5 | Max vertical displacement in meters |
 | PositionLimitZ | 0.40 | 0.01-0.5 | Max depth displacement in meters |
 | PositionSmoothing | 0.15 | 0.0-1.0 | Position smoothing factor |
+| TrackerPivotForward | 0.08 | 0.0-0.20 | Distance from neck pivot to tracker face point (meters). Compensates yaw orbit. |
 
 ### Neck Model
 | Setting | Default | Range | Description |

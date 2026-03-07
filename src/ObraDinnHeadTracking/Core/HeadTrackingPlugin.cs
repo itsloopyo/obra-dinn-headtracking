@@ -114,7 +114,8 @@ namespace HeadTracking.Core
                     _config.PositionSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true
                 ),
-                NeckModelSettings = NeckModelSettings.Disabled
+                NeckModelSettings = NeckModelSettings.Disabled,
+                TrackerPivotForward = _config.TrackerPivotForward.Value
             };
             _positionInterpolator = new PositionInterpolator();
             _cameraController = new CameraController(

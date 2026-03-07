@@ -44,6 +44,9 @@ namespace HeadTracking.Config
         public ConfigEntry<float> PositionLimitZ { get; private set; }
         public ConfigEntry<float> PositionSmoothing { get; private set; }
 
+        // Pivot compensation
+        public ConfigEntry<float> TrackerPivotForward { get; private set; }
+
         // Neck model settings
         public ConfigEntry<bool> NeckModelEnabled { get; private set; }
         public ConfigEntry<float> NeckModelHeight { get; private set; }
@@ -250,6 +253,18 @@ namespace HeadTracking.Config
                 new ConfigDescription(
                     "Smoothing for positional tracking (0 = instant, 1 = very slow)",
                     new AcceptableValueRange<float>(0f, 1f)
+                )
+            );
+
+            TrackerPivotForward = config.Bind(
+                "Position",
+                "TrackerPivotForward",
+                0.08f,
+                new ConfigDescription(
+                    "Distance in meters from the neck pivot to the tracker's face point. " +
+                    "Compensates the lateral arc that head yaw introduces into position data. " +
+                    "Increase if yawing feels like orbiting forward, decrease if it orbits backward.",
+                    new AcceptableValueRange<float>(0f, 0.20f)
                 )
             );
 
