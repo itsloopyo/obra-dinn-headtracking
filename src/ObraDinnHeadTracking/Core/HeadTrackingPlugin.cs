@@ -22,7 +22,7 @@ namespace HeadTracking.Core
     {
         public const string PluginGUID = "com.headtracking.obradinn";
         public const string PluginName = "Obra Dinn Head Tracking";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.0.2";
 
         /// <summary>
         /// Singleton instance for cross-component access.
