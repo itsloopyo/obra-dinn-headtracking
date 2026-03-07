@@ -133,7 +133,7 @@ This mod includes built-in smoothing to handle network jitter, so if your tracki
 
 Check `BepInEx/LogOutput.log` (or the console if the game is running) for:
 ```
-[Info   :   BepInEx] Loading [Obra Dinn Head Tracking 1.0.0]
+[Info   :   BepInEx] Loading [Obra Dinn Head Tracking 1.0.1]
 [Info   :Obra Dinn Head Tracking] Obra Dinn Head Tracking v1.0.0 initializing...
 [Info   :Obra Dinn Head Tracking] Listening on UDP port 4242
 ```

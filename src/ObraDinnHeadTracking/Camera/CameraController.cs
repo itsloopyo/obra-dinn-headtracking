@@ -45,10 +45,28 @@ namespace HeadTracking.Camera
         private Vec3 _pendingPositionOffset;
         private bool _hasPendingPosition;
 
+        // 6DOF auto-detection: latches true once we see non-zero position data
+        private bool _detected6DOF;
+
         /// <summary>
         /// Whether positional tracking (lean/neck model) is enabled.
         /// </summary>
         public bool PositionEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Neck model settings for rotation-only positional parallax.
+        /// </summary>
+        public NeckModelSettings NeckModelSettings { get; set; } = NeckModelSettings.Default;
+
+        /// <summary>
+        /// Forward distance (meters) from the neck pivot to the tracker's tracked
+        /// point on the face. When the head rotates, this point arcs around the
+        /// neck, injecting phantom translation into the 6DOF position data.
+        /// This value is used to subtract that arc so the camera sits at the
+        /// rotation center (≈ eye position) rather than at the face surface.
+        /// Default: 0.15m. Set to 0 to disable.
+        /// </summary>
+        public float TrackerPivotForward { get; set; } = 0.15f;
 
         /// <summary>
         /// Whether tracking is currently being applied.
@@ -96,6 +114,7 @@ namespace HeadTracking.Camera
         /// <summary>
         /// Called by HeadMotionPatch postfix after HeadMotion.LateUpdate writes its final localPosition.
         /// Adds our tracking position offset on top of the game's head bob / wave / crouch offsets.
+        /// The offset is in body-local space (tracker axes align with parent's local axes).
         /// </summary>
         public void ApplyPendingPosition(Transform headMotionTransform)
         {
@@ -143,6 +162,7 @@ namespace HeadTracking.Camera
                     // Starting to track - begin transition in
                     _isTransitioningIn = true;
                     _transitionInProgress = 0f;
+                    _detected6DOF = false;
                     _interpolator.Reset();
                     _processor.ResetSmoothing();
                     _positionInterpolator.Reset();
@@ -223,6 +243,7 @@ namespace HeadTracking.Camera
             _lastTrackingPosition = Vec3.Zero;
             _pendingPositionOffset = Vec3.Zero;
             _hasPendingPosition = false;
+            _detected6DOF = false;
             _processor.ResetSmoothing();
             _interpolator.Reset();
             _positionProcessor.Reset();
@@ -313,16 +334,55 @@ namespace HeadTracking.Camera
 
             ApplyComposedRotation(cameraTransform, currentLocal.x, trackingYaw, trackingPitch, trackingRoll);
 
-            // Position processing: tracker position + neck model
+            // Position: auto-detect 6DOF vs 3DOF.
+            // If raw position is non-zero, latch to 6DOF for the session.
+            // Otherwise fall back to neck model for rotation-only parallax.
+            Vec3 finalPos;
             if (PositionEnabled)
             {
                 var rawPos = _receiver.GetLatestPosition();
-                var interpolatedPos = _positionInterpolator.Update(rawPos, Time.deltaTime);
 
-                // Build rotation quaternion from final tracking values (same as used for localRotation)
-                var headRotQ = QuaternionUtils.FromYawPitchRoll(trackingYaw, -trackingPitch, trackingRoll);
-                var finalPos = _positionProcessor.Process(interpolatedPos, headRotQ, isRemote, Time.deltaTime);
+                // Latch: once we see any non-zero position, stay in 6DOF mode
+                if (!_detected6DOF && (rawPos.X != 0f || rawPos.Y != 0f || rawPos.Z != 0f))
+                {
+                    _detected6DOF = true;
+                }
 
+                if (_detected6DOF)
+                {
+                    var interpolatedPos = _positionInterpolator.Update(rawPos, Time.deltaTime);
+
+                    // Face-to-eye correction: the tracker tracks the face surface,
+                    // which arcs around the neck pivot when the head rotates. Subtract
+                    // the arc so the camera sits at the rotation center (eye position).
+                    if (TrackerPivotForward > 0f)
+                    {
+                        var headRotQ = QuaternionUtils.FromYawPitchRoll(
+                            processed.Yaw, -processed.Pitch, processed.Roll);
+                        Vec3 pivot = new Vec3(0f, 0f, TrackerPivotForward);
+                        Vec3 arc = headRotQ.Rotate(pivot) - pivot;
+                        interpolatedPos = new PositionData(
+                            interpolatedPos.X - arc.X,
+                            interpolatedPos.Y - arc.Y,
+                            interpolatedPos.Z - arc.Z,
+                            interpolatedPos.TimestampTicks);
+                    }
+
+                    finalPos = _positionProcessor.Process(interpolatedPos, isRemote, Time.deltaTime);
+                }
+                else
+                {
+                    // 3DOF: neck model provides positional parallax from rotation
+                    var headRotQ = QuaternionUtils.FromYawPitchRoll(trackingYaw, -trackingPitch, trackingRoll);
+                    finalPos = NeckModel.ComputeOffset(headRotQ, NeckModelSettings);
+                }
+            }
+            else
+            {
+                finalPos = Vec3.Zero;
+            }
+
+            {
                 // Scale position by transition factor — don't apply directly,
                 // store for onPreCull which fires after all game LateUpdates
                 Vec3 scaledPos = finalPos * scale;

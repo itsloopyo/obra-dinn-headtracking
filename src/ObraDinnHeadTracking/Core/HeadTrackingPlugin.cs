@@ -113,17 +113,17 @@ namespace HeadTracking.Core
                     _config.PositionLimitZ.Value,
                     _config.PositionSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true
-                ),
-                NeckModelSettings = new NeckModelSettings(
-                    _config.NeckModelEnabled.Value,
-                    _config.NeckModelHeight.Value,
-                    _config.NeckModelForward.Value
                 )
             };
             _positionInterpolator = new PositionInterpolator();
             _cameraController = new CameraController(
                 _receiver, _processor, _interpolator,
                 _positionProcessor, _positionInterpolator);
+            _cameraController.NeckModelSettings = new NeckModelSettings(
+                _config.NeckModelEnabled.Value,
+                _config.NeckModelHeight.Value,
+                _config.NeckModelForward.Value
+            );
             _gameStateDetector = new GameStateDetector();
             _inputHandler = new InputHandler(_config);
             _notificationUI = new NotificationUI();
