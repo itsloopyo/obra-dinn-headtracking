@@ -113,7 +113,8 @@ namespace HeadTracking.Core
                     _config.PositionLimitZ.Value,
                     _config.PositionSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true
-                )
+                ),
+                NeckModelSettings = NeckModelSettings.Disabled
             };
             _positionInterpolator = new PositionInterpolator();
             _cameraController = new CameraController(

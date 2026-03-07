@@ -59,16 +59,6 @@ namespace HeadTracking.Camera
         public NeckModelSettings NeckModelSettings { get; set; } = NeckModelSettings.Default;
 
         /// <summary>
-        /// Forward distance (meters) from the neck pivot to the tracker's tracked
-        /// point on the face. When the head rotates, this point arcs around the
-        /// neck, injecting phantom translation into the 6DOF position data.
-        /// This value is used to subtract that arc so the camera sits at the
-        /// rotation center (≈ eye position) rather than at the face surface.
-        /// Default: 0.15m. Set to 0 to disable.
-        /// </summary>
-        public float TrackerPivotForward { get; set; } = 0.15f;
-
-        /// <summary>
         /// Whether tracking is currently being applied.
         /// </summary>
         public bool IsApplyingTracking => _wasApplyingTracking && !_isTransitioningOut;
@@ -352,23 +342,10 @@ namespace HeadTracking.Camera
                 {
                     var interpolatedPos = _positionInterpolator.Update(rawPos, Time.deltaTime);
 
-                    // Face-to-eye correction: the tracker tracks the face surface,
-                    // which arcs around the neck pivot when the head rotates. Subtract
-                    // the arc so the camera sits at the rotation center (eye position).
-                    if (TrackerPivotForward > 0f)
-                    {
-                        var headRotQ = QuaternionUtils.FromYawPitchRoll(
-                            processed.Yaw, -processed.Pitch, processed.Roll);
-                        Vec3 pivot = new Vec3(0f, 0f, TrackerPivotForward);
-                        Vec3 arc = headRotQ.Rotate(pivot) - pivot;
-                        interpolatedPos = new PositionData(
-                            interpolatedPos.X - arc.X,
-                            interpolatedPos.Y - arc.Y,
-                            interpolatedPos.Z - arc.Z,
-                            interpolatedPos.TimestampTicks);
-                    }
-
-                    finalPos = _positionProcessor.Process(interpolatedPos, isRemote, Time.deltaTime);
+                    // Physical rotation for pivot compensation inside PositionProcessor
+                    var physicalRotQ = QuaternionUtils.FromYawPitchRoll(
+                        interpolated.Yaw, -interpolated.Pitch, interpolated.Roll);
+                    finalPos = _positionProcessor.Process(interpolatedPos, physicalRotQ, isRemote, Time.deltaTime);
                 }
                 else
                 {
