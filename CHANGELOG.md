@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.3] - 2026-03-08
+
+### Other
+
+- Auto-recenter on first valid tracking frame
+
 ## [1.0.2] - 2026-03-07
 
 ### Other
