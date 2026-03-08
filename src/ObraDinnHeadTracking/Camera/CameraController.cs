@@ -48,6 +48,9 @@ namespace HeadTracking.Camera
         // 6DOF auto-detection: latches true once we see non-zero position data
         private bool _detected6DOF;
 
+        // Auto-recenter on first valid tracking frame
+        private bool _hasCentered;
+
         /// <summary>
         /// Whether positional tracking (lean/neck model) is enabled.
         /// </summary>
@@ -149,6 +152,15 @@ namespace HeadTracking.Camera
                 // Detect transition from not-tracking to tracking
                 if (!_wasApplyingTracking)
                 {
+                    // Auto-recenter on first valid tracking frame
+                    if (!_hasCentered)
+                    {
+                        _hasCentered = true;
+                        var rawPose = _receiver.GetLatestPose();
+                        _processor.RecenterTo(rawPose);
+                        _positionProcessor.SetCenter(_receiver.GetLatestPosition());
+                    }
+
                     // Starting to track - begin transition in
                     _isTransitioningIn = true;
                     _transitionInProgress = 0f;
