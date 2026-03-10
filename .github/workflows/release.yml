@@ -16,5 +16,6 @@ jobs:
       mod-dlls: "ObraDinnHeadTracking.dll CameraUnlock.Core.dll CameraUnlock.Core.Unity.dll"
       artifact-paths: "src/ObraDinnHeadTracking/ cameraunlock-core scripts/install.cmd scripts/uninstall.cmd prebuilt/"
       prebuilt-dir: prebuilt
+      create-nexus-zip: "true"
     permissions:
       contents: write

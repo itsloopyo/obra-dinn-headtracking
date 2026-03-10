@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.4] - 2026-03-10
+
+### Other
+
+- Use spherical coordinate reconstruction for camera and exact projection for reticle
+
 ## [1.0.3] - 2026-03-08
 
 ### Other

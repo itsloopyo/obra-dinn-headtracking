@@ -284,17 +284,37 @@ namespace HeadTracking.Camera
 
         /// <summary>
         /// Composes tracking rotation with the game's pitch and applies it to the camera.
-        /// Pitch is negated to match the game's coordinate system (cameraMouseLook convention).
-        /// Uses quaternion composition (YXZ order) to avoid gimbal lock at extreme yaw angles.
+        /// Uses spherical coordinate reconstruction in the camera's local basis (matching DL2/Green Hell):
+        /// yaw produces pure screen-horizontal motion at any game pitch, and the up vector is
+        /// re-derived to prevent coupled roll artifacts.
         /// </summary>
         private static void ApplyComposedRotation(
             Transform cameraTransform, float gamePitchDeg,
             float yaw, float pitch, float roll)
         {
-            var trackingQ = QuaternionUtils.FromYawPitchRoll(yaw, -pitch, roll);
             var gamePitchQ = Quaternion.Euler(gamePitchDeg, 0f, 0f);
-            cameraTransform.localRotation =
-                gamePitchQ * new Quaternion(trackingQ.X, trackingQ.Y, trackingQ.Z, trackingQ.W);
+
+            Vector3 origFwd = gamePitchQ * Vector3.forward;
+            Vector3 origUp = gamePitchQ * Vector3.up;
+            Vector3 origRight = gamePitchQ * Vector3.right;
+
+            float yawRad = yaw * Mathf.Deg2Rad;
+            float pitchRad = -pitch * Mathf.Deg2Rad;
+
+            float cosY = Mathf.Cos(yawRad), sinY = Mathf.Sin(yawRad);
+            float cosP = Mathf.Cos(pitchRad), sinP = Mathf.Sin(pitchRad);
+
+            Vector3 newFwd = cosP * cosY * origFwd + cosP * sinY * origRight - sinP * origUp;
+
+            float dot = Vector3.Dot(newFwd, origUp);
+            Vector3 newUp = (origUp - newFwd * dot).normalized;
+
+            if (Mathf.Abs(roll) > 0.001f)
+            {
+                newUp = Quaternion.AngleAxis(roll, newFwd) * newUp;
+            }
+
+            cameraTransform.localRotation = Quaternion.LookRotation(newFwd, newUp);
         }
 
         /// <summary>

@@ -18,7 +18,6 @@ namespace HeadTracking.Config
         public ConfigEntry<KeyCode> RecenterKey { get; private set; }
         public ConfigEntry<KeyCode> ToggleReticleKey { get; private set; }
         public ConfigEntry<KeyCode> TogglePositionKey { get; private set; }
-
         // UI settings
         public ConfigEntry<bool> ShowConnectionNotifications { get; private set; }
         public ConfigEntry<bool> ShowReticle { get; private set; }
@@ -171,8 +170,9 @@ namespace HeadTracking.Config
                 "Smoothing",
                 0.0f,
                 new ConfigDescription(
-                    "Base smoothing level (0 = no smoothing, 1 = max smoothing). " +
-                    "Higher values reduce jitter but add latency. " +
+                    "Smoothing level (0 = responsive, 1 = heavy smoothing). " +
+                    "Frame interpolation is always applied to fill frames between tracker samples. " +
+                    "Higher values add additional jitter filtering at the cost of latency. " +
                     "Remote connections automatically use a minimum of 0.1 for network latency compensation.",
                     new AcceptableValueRange<float>(0f, 1f)
                 )
@@ -295,6 +295,7 @@ namespace HeadTracking.Config
                     new AcceptableValueRange<float>(0f, 0.20f)
                 )
             );
+
         }
     }
 }

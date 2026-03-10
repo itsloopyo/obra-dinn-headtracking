@@ -22,7 +22,7 @@ namespace HeadTracking.Core
     {
         public const string PluginGUID = "com.headtracking.obradinn";
         public const string PluginName = "Obra Dinn Head Tracking";
-        public const string PluginVersion = "1.0.3";
+        public const string PluginVersion = "1.0.4";
 
         /// <summary>
         /// Singleton instance for cross-component access.
@@ -316,8 +316,7 @@ namespace HeadTracking.Core
         /// <summary>
         /// Calculates the screen offset for the aim reticle based on current head tracking rotation.
         /// The reticle shows where you're aiming (mouse direction) vs where you're looking (head direction).
-        /// Must match the rotation composition in CameraController.ApplyComposedRotation:
-        ///   rotAfter = Euler(gamePitch, 0, 0) * FromYawPitchRoll(yaw, -pitch, roll)
+        /// Uses tangent projection with 2D roll rotation (matches Green Hell / DL2 approach).
         /// </summary>
         private UnityEngine.Vector2 CalculateAimOffset()
         {
@@ -330,26 +329,6 @@ namespace HeadTracking.Core
             float yawDeg = _cameraController.LastTrackingYaw;
             float pitchDeg = _cameraController.LastTrackingPitch;
             float rollDeg = _cameraController.LastTrackingRoll;
-            float gamePitchDeg = _cameraController.GameCameraPitch;
-
-            // Match the rotation composition from ApplyComposedRotation:
-            //   rotBefore = Euler(gamePitch, 0, 0)                                    — camera before tracking
-            //   rotAfter  = Euler(gamePitch, 0, 0) * FromYawPitchRoll(yaw, -pitch, roll) — camera after tracking
-            // Aim direction in camera-local space = Inverse(rotAfter) * rotBefore * forward
-            var trackingQ = CameraUnlock.Core.Math.QuaternionUtils.FromYawPitchRoll(yawDeg, -pitchDeg, rollDeg);
-            UnityEngine.Quaternion rotBefore = UnityEngine.Quaternion.Euler(gamePitchDeg, 0f, 0f);
-            UnityEngine.Quaternion rotAfter = rotBefore * new UnityEngine.Quaternion(trackingQ.X, trackingQ.Y, trackingQ.Z, trackingQ.W);
-            UnityEngine.Vector3 aimDir = UnityEngine.Quaternion.Inverse(rotAfter) * rotBefore * UnityEngine.Vector3.forward;
-
-            if (aimDir.z < 0.01f)
-            {
-                aimDir.z = 0.01f;
-            }
-
-            if (float.IsNaN(aimDir.x) || float.IsNaN(aimDir.y) || float.IsNaN(aimDir.z))
-            {
-                return UnityEngine.Vector2.zero;
-            }
 
             float? vFovNullable = _cameraController.GameplayCameraFov;
             if (!vFovNullable.HasValue)
@@ -358,18 +337,49 @@ namespace HeadTracking.Core
             }
 
             float vFov = vFovNullable.Value;
-            float vFovRad = vFov * UnityEngine.Mathf.Deg2Rad;
-            float tanHalfVFov = UnityEngine.Mathf.Tan(vFovRad / 2f);
+            float tanHalfVFov = UnityEngine.Mathf.Tan(vFov * UnityEngine.Mathf.Deg2Rad * 0.5f);
             float tanHalfHFov = tanHalfVFov * cam.aspect;
 
-            float screenWidth = UnityEngine.Screen.width;
-            float screenHeight = UnityEngine.Screen.height;
+            float halfWidth = UnityEngine.Screen.width * 0.5f;
+            float halfHeight = UnityEngine.Screen.height * 0.5f;
 
-            float normalizedX = aimDir.x / (aimDir.z * tanHalfHFov);
-            float normalizedY = aimDir.y / (aimDir.z * tanHalfVFov);
+            // Exact 3D projection using same angle conventions as ApplyComposedRotation.
+            // Original aim direction decomposed into tracked camera basis:
+            //   right   = -sin(yaw)
+            //   up      = sin(pitchRad) * cos(yaw)     [pitchRad = -pitchDeg * Deg2Rad]
+            //   forward = cos(pitchRad) * cos(yaw)
+            float yawRad = yawDeg * UnityEngine.Mathf.Deg2Rad;
+            float pitchRad = -pitchDeg * UnityEngine.Mathf.Deg2Rad;
 
-            float offsetX = normalizedX * (screenWidth / 2f);
-            float offsetY = normalizedY * (screenHeight / 2f);
+            float sinY = UnityEngine.Mathf.Sin(yawRad);
+            float cosY = UnityEngine.Mathf.Cos(yawRad);
+            float sinP = UnityEngine.Mathf.Sin(pitchRad);
+            float cosP = UnityEngine.Mathf.Cos(pitchRad);
+
+            float ax = -sinY;
+            float ay = sinP * cosY;
+            float az = cosP * cosY;
+
+            // Apply roll in camera xy-plane (before perspective divide)
+            if (UnityEngine.Mathf.Abs(rollDeg) > 0.001f)
+            {
+                float rollRad = -rollDeg * UnityEngine.Mathf.Deg2Rad;
+                float cosR = UnityEngine.Mathf.Cos(rollRad);
+                float sinR = UnityEngine.Mathf.Sin(rollRad);
+                float rx = cosR * ax - sinR * ay;
+                float ry = sinR * ax + cosR * ay;
+                ax = rx;
+                ay = ry;
+            }
+
+            // Perspective divide and FOV scaling
+            float offsetX = (ax / az) / tanHalfHFov * halfWidth;
+            float offsetY = (ay / az) / tanHalfVFov * halfHeight;
+
+            if (float.IsNaN(offsetX) || float.IsNaN(offsetY))
+            {
+                return UnityEngine.Vector2.zero;
+            }
 
             return new UnityEngine.Vector2(offsetX, offsetY);
         }
