@@ -116,8 +116,16 @@ namespace HeadTracking.Camera
                 return;
             }
 
-            var gamePos = headMotionTransform.localPosition;
-            headMotionTransform.localPosition = gamePos + new Vector3(
+            // Apply to the gameplay camera transform (same one we apply rotation to),
+            // NOT HeadMotion's transform — HeadMotion may not be in the camera's hierarchy.
+            var cameraTransform = GetGameplayCameraTransform();
+            if (cameraTransform == null)
+            {
+                return;
+            }
+
+            var gamePos = cameraTransform.localPosition;
+            cameraTransform.localPosition = gamePos + new Vector3(
                 _pendingPositionOffset.X, _pendingPositionOffset.Y, _pendingPositionOffset.Z);
 
             _hasPendingPosition = false;
@@ -180,6 +188,16 @@ namespace HeadTracking.Camera
                     {
                         _transitionInProgress = 1f;
                         _isTransitioningIn = false;
+
+                        // Re-recenter with stabilized tracker values.
+                        // Initial auto-recenter may capture unstabilized face tracker data
+                        // (warm-up Y drift). After 0.5s the tracker has settled.
+                        if (_receiver.IsReceiving)
+                        {
+                            var rawPose = _receiver.GetLatestPose();
+                            _processor.RecenterTo(rawPose);
+                            _positionProcessor.SetCenter(_receiver.GetLatestPosition());
+                        }
                     }
                     // Smooth ease-in curve
                     trackingScale = _transitionInProgress * _transitionInProgress;
@@ -246,9 +264,10 @@ namespace HeadTracking.Camera
             _pendingPositionOffset = Vec3.Zero;
             _hasPendingPosition = false;
             _detected6DOF = false;
+            _hasCentered = false;
             _processor.ResetSmoothing();
             _interpolator.Reset();
-            _positionProcessor.Reset();
+            _positionProcessor.ResetSmoothing();
             _positionInterpolator.Reset();
             _resolvedFrame = -1;
         }
@@ -284,9 +303,11 @@ namespace HeadTracking.Camera
 
         /// <summary>
         /// Composes tracking rotation with the game's pitch and applies it to the camera.
-        /// Uses spherical coordinate reconstruction in the camera's local basis (matching DL2/Green Hell):
-        /// yaw produces pure screen-horizontal motion at any game pitch, and the up vector is
-        /// re-derived to prevent coupled roll artifacts.
+        /// Uses axis-rotation sequence matching DL2/Green Hell:
+        ///   1. Yaw around world Y (horizon-locked — pure horizontal motion regardless of game pitch)
+        ///   2. Pitch around camera right
+        ///   3. Re-derive up perpendicular to new forward (prevents coupled roll artifacts)
+        ///   4. Roll around forward
         /// </summary>
         private static void ApplyComposedRotation(
             Transform cameraTransform, float gamePitchDeg,
@@ -294,27 +315,35 @@ namespace HeadTracking.Camera
         {
             var gamePitchQ = Quaternion.Euler(gamePitchDeg, 0f, 0f);
 
-            Vector3 origFwd = gamePitchQ * Vector3.forward;
-            Vector3 origUp = gamePitchQ * Vector3.up;
-            Vector3 origRight = gamePitchQ * Vector3.right;
+            Vector3 fwd = gamePitchQ * Vector3.forward;
+            Vector3 up = gamePitchQ * Vector3.up;
 
-            float yawRad = yaw * Mathf.Deg2Rad;
-            float pitchRad = -pitch * Mathf.Deg2Rad;
-
-            float cosY = Mathf.Cos(yawRad), sinY = Mathf.Sin(yawRad);
-            float cosP = Mathf.Cos(pitchRad), sinP = Mathf.Sin(pitchRad);
-
-            Vector3 newFwd = cosP * cosY * origFwd + cosP * sinY * origRight - sinP * origUp;
-
-            float dot = Vector3.Dot(newFwd, origUp);
-            Vector3 newUp = (origUp - newFwd * dot).normalized;
-
-            if (Mathf.Abs(roll) > 0.001f)
+            // 1. Yaw: rotate fwd and up around world Y (horizon-locked)
+            if (Mathf.Abs(yaw) > 0.001f)
             {
-                newUp = Quaternion.AngleAxis(roll, newFwd) * newUp;
+                var yawQ = Quaternion.AngleAxis(yaw, Vector3.up);
+                fwd = yawQ * fwd;
+                up = yawQ * up;
             }
 
-            cameraTransform.localRotation = Quaternion.LookRotation(newFwd, newUp);
+            // 2. Pitch: rotate fwd around camera right
+            if (Mathf.Abs(pitch) > 0.001f)
+            {
+                Vector3 right = Vector3.Cross(up, fwd).normalized;
+                fwd = Quaternion.AngleAxis(-pitch, right) * fwd;
+            }
+
+            // 3. Re-derive up perpendicular to new forward
+            float dot = Vector3.Dot(fwd, up);
+            Vector3 newUp = (up - fwd * dot).normalized;
+
+            // 4. Roll: rotate up around forward
+            if (Mathf.Abs(roll) > 0.001f)
+            {
+                newUp = Quaternion.AngleAxis(roll, fwd) * newUp;
+            }
+
+            cameraTransform.localRotation = Quaternion.LookRotation(fwd, newUp);
         }
 
         /// <summary>
