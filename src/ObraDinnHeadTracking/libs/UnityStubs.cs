@@ -129,6 +129,7 @@ namespace UnityEngine {
         public static Matrix4x4 Scale(Vector3 v) => default;
         public static Matrix4x4 operator *(Matrix4x4 lhs, Matrix4x4 rhs) => default;
         public Matrix4x4 inverse => default;
+        public Vector3 MultiplyVector(Vector3 vector) => default;
         public Quaternion rotation => default;
         public Vector3 lossyScale => default;
         public float this[int row, int column] { get => 0; set { } }
