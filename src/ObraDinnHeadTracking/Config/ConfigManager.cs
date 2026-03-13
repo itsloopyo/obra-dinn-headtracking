@@ -41,6 +41,7 @@ namespace HeadTracking.Config
         public ConfigEntry<float> PositionLimitX { get; private set; }
         public ConfigEntry<float> PositionLimitY { get; private set; }
         public ConfigEntry<float> PositionLimitZ { get; private set; }
+        public ConfigEntry<float> PositionLimitZBack { get; private set; }
         public ConfigEntry<float> PositionSmoothing { get; private set; }
 
         // Pivot compensation
@@ -241,7 +242,17 @@ namespace HeadTracking.Config
                 "PositionLimitZ",
                 0.40f,
                 new ConfigDescription(
-                    "Maximum depth displacement in meters (prevents wall clipping)",
+                    "Maximum forward depth displacement in meters (prevents wall clipping)",
+                    new AcceptableValueRange<float>(0.01f, 0.5f)
+                )
+            );
+
+            PositionLimitZBack = config.Bind(
+                "Position",
+                "PositionLimitZBack",
+                0.10f,
+                new ConfigDescription(
+                    "Maximum backward depth displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
                 )
             );

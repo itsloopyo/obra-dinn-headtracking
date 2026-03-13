@@ -111,6 +111,7 @@ namespace HeadTracking.Core
                     _config.PositionLimitX.Value,
                     _config.PositionLimitY.Value,
                     _config.PositionLimitZ.Value,
+                    _config.PositionLimitZBack.Value,
                     _config.PositionSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true
                 ),
