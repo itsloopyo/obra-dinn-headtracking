@@ -7,7 +7,7 @@ An **unofficial** BepInEx mod that adds head tracking support to Return of the O
 ## Features
 
 - **Decoupled look + aim**: Look around freely with your head while your aim stays independent
-- **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol, with neck model fallback for 3DOF trackers
+- **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol, with neck model for 3DOF trackers
 - **Framerate unlock**: Optional removal of the game's 60 FPS cap for smoother tracking
 
 ## Requirements
@@ -37,6 +37,16 @@ The installer automatically finds your game via Steam registry lookup. If it can
 3. Set output to **UDP over network**
 4. Host: `127.0.0.1`, Port: `4242`
 5. Start tracking before launching the game
+
+### Webcam Setup
+
+No special hardware needed — OpenTrack's built-in **neuralnet tracker** uses any webcam for 6DOF face tracking.
+
+1. In OpenTrack, set the input to **neuralnet tracker**
+2. Select your webcam in the tracker settings
+3. Set output to **UDP over network** (`127.0.0.1:4242`)
+4. Start tracking before launching the game
+5. Recenter in OpenTrack via its hotkey, and press **Home** in-game to recenter the mod as needed
 
 ### Phone App Setup
 

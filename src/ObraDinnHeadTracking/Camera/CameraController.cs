@@ -2,6 +2,7 @@ using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Math;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
+using CameraUnlock.Core.Unity.Tracking;
 using HeadTracking.Patches;
 using UnityEngine;
 
@@ -47,9 +48,6 @@ namespace HeadTracking.Camera
 
         // 6DOF auto-detection: latches true once we see non-zero position data
         private bool _detected6DOF;
-
-        // Auto-recenter on first valid tracking frame
-        private bool _hasCentered;
 
         /// <summary>
         /// Whether positional tracking (lean/neck model) is enabled.
@@ -160,14 +158,10 @@ namespace HeadTracking.Camera
                 // Detect transition from not-tracking to tracking
                 if (!_wasApplyingTracking)
                 {
-                    // Auto-recenter on first valid tracking frame
-                    if (!_hasCentered)
-                    {
-                        _hasCentered = true;
-                        var rawPose = _receiver.GetLatestPose();
-                        _processor.RecenterTo(rawPose);
-                        _positionProcessor.SetCenter(_receiver.GetLatestPosition());
-                    }
+                    // Auto-recenter on every transition to tracking
+                    var rawPose = _receiver.GetLatestPose();
+                    _processor.RecenterTo(rawPose);
+                    _positionProcessor.SetCenter(_receiver.GetLatestPosition());
 
                     // Starting to track - begin transition in
                     _isTransitioningIn = true;
@@ -264,7 +258,7 @@ namespace HeadTracking.Camera
             _pendingPositionOffset = Vec3.Zero;
             _hasPendingPosition = false;
             _detected6DOF = false;
-            _hasCentered = false;
+
             _processor.ResetSmoothing();
             _interpolator.Reset();
             _positionProcessor.ResetSmoothing();
@@ -303,47 +297,15 @@ namespace HeadTracking.Camera
 
         /// <summary>
         /// Composes tracking rotation with the game's pitch and applies it to the camera.
-        /// Uses axis-rotation sequence matching DL2/Green Hell:
-        ///   1. Yaw around world Y (horizon-locked — pure horizontal motion regardless of game pitch)
-        ///   2. Pitch around camera right
-        ///   3. Re-derive up perpendicular to new forward (prevents coupled roll artifacts)
-        ///   4. Roll around forward
+        /// Camera is a child of the player body (which provides yaw), so local rotation
+        /// only contains the game's pitch. ComposeAdditive applies world-yaw + local pitch/roll.
         /// </summary>
         private static void ApplyComposedRotation(
             Transform cameraTransform, float gamePitchDeg,
             float yaw, float pitch, float roll)
         {
-            var gamePitchQ = Quaternion.Euler(gamePitchDeg, 0f, 0f);
-
-            Vector3 fwd = gamePitchQ * Vector3.forward;
-            Vector3 up = gamePitchQ * Vector3.up;
-
-            // 1. Yaw: rotate fwd and up around world Y (horizon-locked)
-            if (Mathf.Abs(yaw) > 0.001f)
-            {
-                var yawQ = Quaternion.AngleAxis(yaw, Vector3.up);
-                fwd = yawQ * fwd;
-                up = yawQ * up;
-            }
-
-            // 2. Pitch: rotate fwd around camera right
-            if (Mathf.Abs(pitch) > 0.001f)
-            {
-                Vector3 right = Vector3.Cross(up, fwd).normalized;
-                fwd = Quaternion.AngleAxis(-pitch, right) * fwd;
-            }
-
-            // 3. Re-derive up perpendicular to new forward
-            float dot = Vector3.Dot(fwd, up);
-            Vector3 newUp = (up - fwd * dot).normalized;
-
-            // 4. Roll: rotate up around forward
-            if (Mathf.Abs(roll) > 0.001f)
-            {
-                newUp = Quaternion.AngleAxis(roll, fwd) * newUp;
-            }
-
-            cameraTransform.localRotation = Quaternion.LookRotation(fwd, newUp);
+            cameraTransform.localRotation = CameraRotationComposer.ComposeAdditive(
+                Quaternion.Euler(gamePitchDeg, 0f, 0f), yaw, pitch, roll);
         }
 
         /// <summary>
