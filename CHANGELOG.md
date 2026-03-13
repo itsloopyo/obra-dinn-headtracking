@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.5] - 2026-03-13
+
+### Other
+
+- Use axis-rotation sequence for camera and exact projection for reticle
+- Update README, submodule, and camera controller
+- Add PositionLimitZBack config and fix Z clamp direction
+
 ## [1.0.4] - 2026-03-10
 
 ### Other
