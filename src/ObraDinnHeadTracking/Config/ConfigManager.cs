@@ -47,11 +47,6 @@ namespace HeadTracking.Config
         // Pivot compensation
         public ConfigEntry<float> TrackerPivotForward { get; private set; }
 
-        // Neck model settings
-        public ConfigEntry<bool> NeckModelEnabled { get; private set; }
-        public ConfigEntry<float> NeckModelHeight { get; private set; }
-        public ConfigEntry<float> NeckModelForward { get; private set; }
-
         /// <summary>
         /// Initialize all configuration entries. Must be called in plugin Awake().
         /// </summary>
@@ -120,7 +115,7 @@ namespace HeadTracking.Config
                 "Keybindings",
                 "TogglePositionKey",
                 KeyCode.PageUp,
-                "Key to toggle positional tracking on/off (lean/neck model)"
+                "Key to toggle positional tracking on/off"
             );
 
             // Network section
@@ -272,37 +267,9 @@ namespace HeadTracking.Config
                 "TrackerPivotForward",
                 0.08f,
                 new ConfigDescription(
-                    "Distance in meters from the neck pivot to the tracker's face point. " +
+                    "Distance in meters from the pivot point to the tracker's face point. " +
                     "Compensates the lateral arc that head yaw introduces into position data. " +
                     "Increase if yawing feels like orbiting forward, decrease if it orbits backward.",
-                    new AcceptableValueRange<float>(0f, 0.20f)
-                )
-            );
-
-            // Neck Model section
-            NeckModelEnabled = config.Bind(
-                "Neck Model",
-                "NeckModelEnabled",
-                true,
-                "Enable neck model simulation (head rotates around neck, not eye center)"
-            );
-
-            NeckModelHeight = config.Bind(
-                "Neck Model",
-                "NeckModelHeight",
-                0.10f,
-                new ConfigDescription(
-                    "Vertical distance from neck pivot to eyes in meters",
-                    new AcceptableValueRange<float>(0f, 0.25f)
-                )
-            );
-
-            NeckModelForward = config.Bind(
-                "Neck Model",
-                "NeckModelForward",
-                0.05f,
-                new ConfigDescription(
-                    "Forward distance from neck pivot to eyes in meters",
                     new AcceptableValueRange<float>(0f, 0.20f)
                 )
             );

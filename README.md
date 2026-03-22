@@ -7,7 +7,7 @@ An **unofficial** BepInEx mod that adds head tracking support to Return of the O
 ## Features
 
 - **Decoupled look + aim**: Look around freely with your head while your aim stays independent
-- **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol, with neck model for 3DOF trackers
+- **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol
 - **Framerate unlock**: Optional removal of the game's 60 FPS cap for smoother tracking
 
 ## Requirements
@@ -108,11 +108,6 @@ PositionLimitY = 0.20           # Max vertical offset in meters
 PositionLimitZ = 0.40           # Max depth offset in meters
 PositionSmoothing = 0.15        # Position smoothing (0.0-1.0)
 TrackerPivotForward = 0.08      # Neck-to-face distance, compensates yaw orbit
-
-[Neck Model]
-NeckModelEnabled = true          # Head rotates around neck, not eye center
-NeckModelHeight = 0.10           # Neck to eyes, vertical (meters)
-NeckModelForward = 0.05          # Neck to eyes, forward (meters)
 ```
 
 ## Troubleshooting

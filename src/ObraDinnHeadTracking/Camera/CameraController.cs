@@ -50,14 +50,9 @@ namespace HeadTracking.Camera
         private bool _detected6DOF;
 
         /// <summary>
-        /// Whether positional tracking (lean/neck model) is enabled.
+        /// Whether positional tracking is enabled.
         /// </summary>
         public bool PositionEnabled { get; set; } = true;
-
-        /// <summary>
-        /// Neck model settings for rotation-only positional parallax.
-        /// </summary>
-        public NeckModelSettings NeckModelSettings { get; set; } = NeckModelSettings.Default;
 
         /// <summary>
         /// Whether tracking is currently being applied.
@@ -349,7 +344,6 @@ namespace HeadTracking.Camera
 
             // Position: auto-detect 6DOF vs 3DOF.
             // If raw position is non-zero, latch to 6DOF for the session.
-            // Otherwise fall back to neck model for rotation-only parallax.
             Vec3 finalPos;
             if (PositionEnabled)
             {
@@ -372,9 +366,8 @@ namespace HeadTracking.Camera
                 }
                 else
                 {
-                    // 3DOF: neck model provides positional parallax from rotation
-                    var headRotQ = QuaternionUtils.FromYawPitchRoll(trackingYaw, -trackingPitch, trackingRoll);
-                    finalPos = NeckModel.ComputeOffset(headRotQ, NeckModelSettings);
+                    // 3DOF: no positional data available
+                    finalPos = Vec3.Zero;
                 }
             }
             else
