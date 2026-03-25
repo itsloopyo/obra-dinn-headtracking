@@ -333,8 +333,7 @@ namespace HeadTracking.Camera
             // Get raw tracking data, interpolate between samples, then process
             var rawPose = _receiver.GetLatestPose();
             var interpolated = _interpolator.Update(rawPose, Time.deltaTime);
-            bool isRemote = _receiver.IsRemoteConnection;
-            var processed = _processor.Process(interpolated, isRemote, Time.deltaTime);
+            var processed = _processor.Process(interpolated, Time.deltaTime);
 
             float trackingYaw = processed.Yaw * scale;
             float trackingPitch = processed.Pitch * scale;
@@ -362,7 +361,7 @@ namespace HeadTracking.Camera
                     // Physical rotation for pivot compensation inside PositionProcessor
                     var physicalRotQ = QuaternionUtils.FromYawPitchRoll(
                         interpolated.Yaw, -interpolated.Pitch, interpolated.Roll);
-                    finalPos = _positionProcessor.Process(interpolatedPos, physicalRotQ, isRemote, Time.deltaTime);
+                    finalPos = _positionProcessor.Process(interpolatedPos, physicalRotQ, Time.deltaTime);
                 }
                 else
                 {
