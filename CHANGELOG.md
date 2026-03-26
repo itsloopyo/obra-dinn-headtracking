@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7] - 2026-03-26
+
+### Other
+
+- Remove neck model feature
+- Simplify camera rotation to camera-local composition
+
 ## [1.0.6] - 2026-03-13
 
 ### Fixed
