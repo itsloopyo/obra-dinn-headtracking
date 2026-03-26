@@ -311,8 +311,8 @@ namespace HeadTracking.Core
         /// <summary>
         /// Calculates the screen offset for the aim reticle based on current head tracking rotation.
         /// The reticle shows where you're aiming (mouse direction) vs where you're looking (head direction).
-        /// Mirrors ApplyComposedRotation exactly (horizon-locked yaw around world Y, matching DL2's
-        /// crosshair_projection.h), then projects the body aim direction into the tracked camera frame.
+        /// With camera-local composition, gamePitch cancels out — the offset depends only on
+        /// the head tracking rotation.
         /// </summary>
         private UnityEngine.Vector2 CalculateAimOffset()
         {
@@ -325,7 +325,6 @@ namespace HeadTracking.Core
             float yaw = _cameraController.LastTrackingYaw;
             float pitch = _cameraController.LastTrackingPitch;
             float roll = _cameraController.LastTrackingRoll;
-            float gamePitch = _cameraController.GameCameraPitch;
 
             float? vFovNullable = _cameraController.GameplayCameraFov;
             if (!vFovNullable.HasValue)
@@ -340,49 +339,17 @@ namespace HeadTracking.Core
             float halfWidth = UnityEngine.Screen.width * 0.5f;
             float halfHeight = UnityEngine.Screen.height * 0.5f;
 
-            // Mirror ApplyComposedRotation exactly to compute where body aim
-            // (original forward before tracking) appears in the tracked camera view.
-            var gamePitchQ = UnityEngine.Quaternion.Euler(gamePitch, 0f, 0f);
-            UnityEngine.Vector3 origFwd = gamePitchQ * UnityEngine.Vector3.forward;
-            UnityEngine.Vector3 fwd = origFwd;
-            UnityEngine.Vector3 up = gamePitchQ * UnityEngine.Vector3.up;
+            // With camera-local composition (gamePitch * headLocal), gamePitch
+            // cancels when projecting the original forward into the tracked frame.
+            // The aim direction in the tracked camera is just Inverse(headLocal) * forward.
+            var headLocal = UnityEngine.Quaternion.Euler(-pitch, yaw, roll);
+            UnityEngine.Vector3 aimInTracked = UnityEngine.Quaternion.Inverse(headLocal) * UnityEngine.Vector3.forward;
 
-            // 1. Yaw around world Y (horizon-locked)
-            if (UnityEngine.Mathf.Abs(yaw) > 0.001f)
-            {
-                var yawQ = UnityEngine.Quaternion.AngleAxis(yaw, UnityEngine.Vector3.up);
-                fwd = yawQ * fwd;
-                up = yawQ * up;
-            }
-
-            // 2. Pitch around camera right
-            if (UnityEngine.Mathf.Abs(pitch) > 0.001f)
-            {
-                UnityEngine.Vector3 right = UnityEngine.Vector3.Cross(up, fwd).normalized;
-                fwd = UnityEngine.Quaternion.AngleAxis(-pitch, right) * fwd;
-            }
-
-            // 3. Re-derive up
-            float dot = UnityEngine.Vector3.Dot(fwd, up);
-            UnityEngine.Vector3 newUp = (up - fwd * dot).normalized;
-
-            // 4. Roll
-            if (UnityEngine.Mathf.Abs(roll) > 0.001f)
-            {
-                newUp = UnityEngine.Quaternion.AngleAxis(roll, fwd) * newUp;
-            }
-
-            // Project body aim direction into tracked camera frame
-            UnityEngine.Vector3 newRight = UnityEngine.Vector3.Cross(newUp, fwd);
-
-            float bDepth = UnityEngine.Vector3.Dot(origFwd, fwd);
-            float bRight = UnityEngine.Vector3.Dot(origFwd, newRight);
-            float bUp = UnityEngine.Vector3.Dot(origFwd, newUp);
-
+            float bDepth = aimInTracked.z;
             if (bDepth < 0.01f) bDepth = 0.01f;
 
-            float offsetX = (bRight / bDepth) / tanHalfHFov * halfWidth;
-            float offsetY = (bUp / bDepth) / tanHalfVFov * halfHeight;
+            float offsetX = (aimInTracked.x / bDepth) / tanHalfHFov * halfWidth;
+            float offsetY = (aimInTracked.y / bDepth) / tanHalfVFov * halfHeight;
 
             if (float.IsNaN(offsetX) || float.IsNaN(offsetY))
             {

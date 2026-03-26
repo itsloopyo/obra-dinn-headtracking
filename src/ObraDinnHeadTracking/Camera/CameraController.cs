@@ -293,14 +293,15 @@ namespace HeadTracking.Camera
         /// <summary>
         /// Composes tracking rotation with the game's pitch and applies it to the camera.
         /// Camera is a child of the player body (which provides yaw), so local rotation
-        /// only contains the game's pitch. ComposeAdditive applies world-yaw + local pitch/roll.
+        /// only contains the game's pitch. Head tracking is applied in camera-local space
+        /// so yaw always pans left/right regardless of game pitch.
         /// </summary>
         private static void ApplyComposedRotation(
             Transform cameraTransform, float gamePitchDeg,
             float yaw, float pitch, float roll)
         {
-            cameraTransform.localRotation = CameraRotationComposer.ComposeAdditive(
-                Quaternion.Euler(gamePitchDeg, 0f, 0f), yaw, pitch, roll);
+            Quaternion headLocal = Quaternion.Euler(-pitch, yaw, roll);
+            cameraTransform.localRotation = Quaternion.Euler(gamePitchDeg, 0f, 0f) * headLocal;
         }
 
         /// <summary>
