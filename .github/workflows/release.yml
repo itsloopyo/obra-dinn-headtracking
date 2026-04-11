@@ -15,7 +15,7 @@ jobs:
       build-output-dir: src/ObraDinnHeadTracking/bin/Release/net35
       mod-name: ObraDinnHeadTracking
       mod-dlls: "ObraDinnHeadTracking.dll CameraUnlock.Core.dll CameraUnlock.Core.Unity.dll"
-      artifact-paths: "src/ObraDinnHeadTracking/ cameraunlock-core scripts/install.cmd scripts/uninstall.cmd prebuilt/"
+      artifact-paths: "src/ObraDinnHeadTracking/ cameraunlock-core scripts/ prebuilt/ README.md CHANGELOG.md LICENSE .github/"
       prebuilt-dir: prebuilt
       create-nexus-zip: "true"
     permissions:

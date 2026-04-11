@@ -157,6 +157,7 @@ namespace HeadTracking.Core
             CameraPatches.OnCameraChanged += OnCameraChangedPatch;
 
             // Start UDP receiver
+            _receiver.Log = msg => Logger.LogInfo(msg);
             _receiver.Start(_config.UDPPort.Value);
 
             // Set initial tracking state from config

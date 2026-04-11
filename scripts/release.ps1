@@ -154,9 +154,12 @@ if (-not $hasExistingTags) {
         ArtifactPaths = @(
             "src/ObraDinnHeadTracking/",
             "cameraunlock-core",
-            "scripts/install.cmd",
-            "scripts/uninstall.cmd",
-            "prebuilt/"
+            "scripts/",
+            "prebuilt/",
+            "README.md",
+            "CHANGELOG.md",
+            "LICENSE",
+            ".github/"
         )
     }
     if ($Force) { $changelogArgs.IncludeAll = $true }

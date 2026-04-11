@@ -1,0 +1,6 @@
+<Project>
+  <!-- Set UnityEnginePath for all projects including submodules -->
+  <PropertyGroup Condition="'$(UnityEnginePath)' == ''">
+    <UnityEnginePath>$(MSBuildThisFileDirectory)src\ObraDinnHeadTracking\libs</UnityEnginePath>
+  </PropertyGroup>
+</Project>

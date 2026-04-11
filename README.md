@@ -1,6 +1,6 @@
 # Obra Dinn Head Tracking
 
-![Mod GIF](assets/readme-clip.gif)
+![Mod GIF](https://raw.githubusercontent.com/itsloopyo/obra-dinn-headtracking/main/assets/readme-clip.gif)
 
 An **unofficial** BepInEx mod that adds head tracking support to Return of the Obra Dinn using OpenTrack. Move your head to look around the ship while your mouse controls where you're aiming.
 
