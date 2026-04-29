@@ -17,7 +17,7 @@ $projectRoot = Split-Path -Parent $scriptDir
 $modulePath = Join-Path $projectRoot "cameraunlock-core\powershell\GamePathDetection.psm1"
 Import-Module $modulePath -Force
 
-$gameId = 'ObraDinn'
+$gameId = 'obra-dinn'
 $config = Get-GameConfig -GameId $gameId
 
 # Find game installation

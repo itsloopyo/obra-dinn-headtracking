@@ -1,6 +1,7 @@
 <Project>
-  <!-- Set UnityEnginePath for all projects including submodules -->
-  <PropertyGroup Condition="'$(UnityEnginePath)' == ''">
+  <!-- Default UnityEnginePath only when libs/ is populated. Otherwise the
+       head .csproj's ManagedPath fallback must be allowed to win. -->
+  <PropertyGroup Condition="'$(UnityEnginePath)' == '' And Exists('$(MSBuildThisFileDirectory)src\ObraDinnHeadTracking\libs\UnityEngine.dll')">
     <UnityEnginePath>$(MSBuildThisFileDirectory)src\ObraDinnHeadTracking\libs</UnityEnginePath>
   </PropertyGroup>
 </Project>

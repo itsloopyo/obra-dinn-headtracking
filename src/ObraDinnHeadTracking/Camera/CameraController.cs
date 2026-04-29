@@ -55,6 +55,11 @@ namespace HeadTracking.Camera
         public bool PositionEnabled { get; set; } = true;
 
         /// <summary>
+        /// Whether rotational tracking is enabled.
+        /// </summary>
+        public bool RotationEnabled { get; set; } = true;
+
+        /// <summary>
         /// Whether tracking is currently being applied.
         /// </summary>
         public bool IsApplyingTracking => _wasApplyingTracking && !_isTransitioningOut;
@@ -336,9 +341,9 @@ namespace HeadTracking.Camera
             var interpolated = _interpolator.Update(rawPose, Time.deltaTime);
             var processed = _processor.Process(interpolated, Time.deltaTime);
 
-            float trackingYaw = processed.Yaw * scale;
-            float trackingPitch = processed.Pitch * scale;
-            float trackingRoll = processed.Roll * scale;
+            float trackingYaw = RotationEnabled ? processed.Yaw * scale : 0f;
+            float trackingPitch = RotationEnabled ? processed.Pitch * scale : 0f;
+            float trackingRoll = RotationEnabled ? processed.Roll * scale : 0f;
 
             ApplyComposedRotation(cameraTransform, currentLocal.x, trackingYaw, trackingPitch, trackingRoll);
 

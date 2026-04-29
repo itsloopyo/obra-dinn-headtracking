@@ -283,27 +283,27 @@ for %%d in (%SEARCH_DIRS%) do (
 exit /b 1
 
 :: ============================================
-:: Install BepInEx
+:: Install BepInEx from the bundled vendored copy.
+:: Vendor tree is the single source of truth at install time. To bump the
+:: bundled version, run `pixi run update-deps` and commit.
+:: See ~/.claude/CLAUDE.md "Vendoring Third-Party Dependencies".
 :: ============================================
 :install_bepinex
-set "BEP_URL=https://github.com/BepInEx/BepInEx/releases/download/v%BEPINEX_VERSION%/BepInEx_win_%BEPINEX_ARCH%_%BEPINEX_VERSION%.zip"
-set "BEP_ZIP=%TEMP%\BepInEx_install.zip"
+set "VENDOR_ZIP=%SCRIPT_DIR%vendor\bepinex\BepInEx_win_x86.zip"
 
-echo   Downloading BepInEx v%BEPINEX_VERSION% (%BEPINEX_ARCH%)...
-curl -fL -o "%BEP_ZIP%" "%BEP_URL%"
-if errorlevel 1 (
-    echo   ERROR: Download failed. Check your internet connection.
+if not exist "%VENDOR_ZIP%" (
+    echo   ERROR: Bundled BepInEx not found at:
+    echo     %VENDOR_ZIP%
+    echo   The installer ZIP is corrupt. Re-download the release.
     exit /b 1
 )
 
-echo   Extracting to game directory...
-tar -xf "%BEP_ZIP%" -C "%GAME_PATH%"
+echo   Extracting bundled BepInEx to game directory...
+"%SystemRoot%\System32\tar.exe" -xf "%VENDOR_ZIP%" -C "%GAME_PATH%"
 if errorlevel 1 (
     echo   ERROR: Extraction failed.
-    del "%BEP_ZIP%" 2>nul
     exit /b 1
 )
-del "%BEP_ZIP%" 2>nul
 
 :: Create plugins directory
 if not exist "%GAME_PATH%\BepInEx\plugins" mkdir "%GAME_PATH%\BepInEx\plugins"

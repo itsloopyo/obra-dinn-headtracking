@@ -60,8 +60,16 @@ namespace HeadTracking.Core
         private NotificationUI _notificationUI;
         private IMGUIReticle _aimReticle;
         private bool _reticleEnabled;
+        private TrackingMode _trackingMode = TrackingMode.Normal;
         // Connection state tracking
         private bool _wasReceiving;
+
+        private enum TrackingMode
+        {
+            Normal,
+            RotationOnly,
+            PositionOnly,
+        }
 
 
         private void Awake()
@@ -146,7 +154,7 @@ namespace HeadTracking.Core
             _inputHandler.OnTogglePressed += HandleToggle;
             _inputHandler.OnRecenterPressed += HandleRecenter;
             _inputHandler.OnToggleReticlePressed += HandleToggleReticle;
-            _inputHandler.OnTogglePositionPressed += HandleTogglePosition;
+            _inputHandler.OnCycleTrackingModePressed += HandleCycleTrackingMode;
 
             // Subscribe to game state changes
             _gameStateDetector.StateChanged += OnGameStateChanged;
@@ -172,7 +180,7 @@ namespace HeadTracking.Core
             // Show startup notification if enabled
             if (_config.ShowStartupNotification.Value)
             {
-                string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.RecenterKey}] Recenter, [{_inputHandler.ToggleReticleKey}] Reticle, [{_inputHandler.TogglePositionKey}] Position";
+                string keyInfo = $"[{_inputHandler.RecenterKey}] Recenter, [{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.CycleTrackingModeKey}] Cycle Mode, [{_inputHandler.ToggleReticleKey}] Reticle";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{statusInfo}\n{keyInfo}", 4f);
             }
@@ -233,7 +241,7 @@ namespace HeadTracking.Core
             _inputHandler.OnTogglePressed -= HandleToggle;
             _inputHandler.OnRecenterPressed -= HandleRecenter;
             _inputHandler.OnToggleReticlePressed -= HandleToggleReticle;
-            _inputHandler.OnTogglePositionPressed -= HandleTogglePosition;
+            _inputHandler.OnCycleTrackingModePressed -= HandleCycleTrackingMode;
             _gameStateDetector.StateChanged -= OnGameStateChanged;
             CameraPatches.OnSceneLoaded -= OnSceneLoadedPatch;
             CameraPatches.OnCameraChanged -= OnCameraChangedPatch;
@@ -294,19 +302,29 @@ namespace HeadTracking.Core
             Logger.LogInfo($"Reticle {(_reticleEnabled ? "enabled" : "disabled")}");
         }
 
-        private void HandleTogglePosition()
+        private void HandleCycleTrackingMode()
         {
-            _cameraController.PositionEnabled = !_cameraController.PositionEnabled;
+            _trackingMode = (TrackingMode)(((int)_trackingMode + 1) % 3);
 
-            if (_cameraController.PositionEnabled)
+            switch (_trackingMode)
             {
-                _notificationUI.ShowNotification("Position: ON", NotificationType.Success, 1.5f);
+                case TrackingMode.Normal:
+                    _cameraController.RotationEnabled = true;
+                    _cameraController.PositionEnabled = true;
+                    _notificationUI.ShowNotification("Tracking: Rotation + Position", NotificationType.Success, 1.5f);
+                    break;
+                case TrackingMode.RotationOnly:
+                    _cameraController.RotationEnabled = true;
+                    _cameraController.PositionEnabled = false;
+                    _notificationUI.ShowNotification("Tracking: Rotation only", NotificationType.Info, 1.5f);
+                    break;
+                case TrackingMode.PositionOnly:
+                    _cameraController.RotationEnabled = false;
+                    _cameraController.PositionEnabled = true;
+                    _notificationUI.ShowNotification("Tracking: Position only", NotificationType.Info, 1.5f);
+                    break;
             }
-            else
-            {
-                _notificationUI.ShowNotification("Position: OFF", NotificationType.Warning, 1.5f);
-            }
-            Logger.LogInfo($"Position tracking {(_cameraController.PositionEnabled ? "enabled" : "disabled")}");
+            Logger.LogInfo($"Tracking mode: {_trackingMode}");
         }
 
         /// <summary>

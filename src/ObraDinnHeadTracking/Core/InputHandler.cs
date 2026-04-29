@@ -6,7 +6,9 @@ namespace HeadTracking.Core
 {
     /// <summary>
     /// Handles configurable keyboard input for toggle and recenter actions.
-    /// Default keys: End (toggle), Home (recenter).
+    /// Each action has a configurable nav-cluster key plus a fixed Ctrl+Shift+letter
+    /// chord, drawn from the T/Y/U/G/H/J cluster so keyboards without a nav block
+    /// still work.
     /// </summary>
     public class InputHandler
     {
@@ -28,9 +30,10 @@ namespace HeadTracking.Core
         public event Action OnToggleReticlePressed;
 
         /// <summary>
-        /// Fired when toggle position key is pressed.
+        /// Fired when cycle tracking mode key is pressed.
+        /// Cycles: normal -> rotation only -> position only -> normal.
         /// </summary>
-        public event Action OnTogglePositionPressed;
+        public event Action OnCycleTrackingModePressed;
 
         /// <summary>
         /// The currently configured toggle key.
@@ -48,9 +51,9 @@ namespace HeadTracking.Core
         public KeyCode ToggleReticleKey => _config.ToggleReticleKey.Value;
 
         /// <summary>
-        /// The currently configured toggle position key.
+        /// The currently configured cycle tracking mode key.
         /// </summary>
-        public KeyCode TogglePositionKey => _config.TogglePositionKey.Value;
+        public KeyCode CycleTrackingModeKey => _config.CycleTrackingModeKey.Value;
 
         public InputHandler(ConfigManager config)
         {
@@ -62,24 +65,32 @@ namespace HeadTracking.Core
         /// </summary>
         public void CheckInput()
         {
-            if (Input.GetKeyDown(_config.ToggleKey.Value))
-            {
-                OnTogglePressed?.Invoke();
-            }
+            bool ctrlShift =
+                (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) &&
+                (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
-            if (Input.GetKeyDown(_config.RecenterKey.Value))
+            if (Input.GetKeyDown(_config.RecenterKey.Value) ||
+                (ctrlShift && Input.GetKeyDown(KeyCode.T)))
             {
                 OnRecenterPressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(_config.ToggleReticleKey.Value))
+            if (Input.GetKeyDown(_config.ToggleKey.Value) ||
+                (ctrlShift && Input.GetKeyDown(KeyCode.Y)))
             {
-                OnToggleReticlePressed?.Invoke();
+                OnTogglePressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(_config.TogglePositionKey.Value))
+            if (Input.GetKeyDown(_config.CycleTrackingModeKey.Value) ||
+                (ctrlShift && Input.GetKeyDown(KeyCode.G)))
             {
-                OnTogglePositionPressed?.Invoke();
+                OnCycleTrackingModePressed?.Invoke();
+            }
+
+            if (Input.GetKeyDown(_config.ToggleReticleKey.Value) ||
+                (ctrlShift && Input.GetKeyDown(KeyCode.H)))
+            {
+                OnToggleReticlePressed?.Invoke();
             }
         }
     }

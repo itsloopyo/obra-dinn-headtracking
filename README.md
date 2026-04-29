@@ -60,12 +60,21 @@ This mod includes built-in smoothing for network jitter, so you can send directl
 
 ## Controls
 
-| Key | Action |
-|-----|--------|
-| **Home** | Recenter view |
-| **End** | Toggle head tracking on/off |
-| **Insert** | Toggle aim reticle on/off |
-| **Page Up** | Toggle positional tracking on/off |
+Two equivalent binding sets - use whichever your keyboard has:
+
+| Action              | Nav-cluster | Chord           |
+|---------------------|-------------|-----------------|
+| Recenter            | `Home`      | `Ctrl+Shift+T`  |
+| Toggle tracking     | `End`       | `Ctrl+Shift+Y`  |
+| Cycle tracking mode | `Page Up`   | `Ctrl+Shift+G`  |
+| Toggle reticle      | `Page Down` | `Ctrl+Shift+H`  |
+
+`Page Up` / `Ctrl+Shift+G` cycles tracking mode:
+
+1. Normal head-tracked gameplay
+2. Positional tracking disabled, rotational tracking enabled
+3. Rotational tracking disabled, positional tracking enabled
+4. Back to normal
 
 ## Configuration
 
@@ -82,10 +91,10 @@ ShowConnectionNotifications = true
 ShowReticle = true               # Aim reticle during gameplay
 
 [Keybindings]
-ToggleKey = End
-RecenterKey = Home
-ToggleReticleKey = Insert
-TogglePositionKey = PageUp
+RecenterKey = Home               # Also Ctrl+Shift+T
+ToggleKey = End                  # Also Ctrl+Shift+Y
+CycleTrackingModeKey = PageUp    # Also Ctrl+Shift+G
+ToggleReticleKey = PageDown      # Also Ctrl+Shift+H
 
 [Network]
 UDPPort = 4242                   # Must match OpenTrack output port

@@ -45,17 +45,18 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
     Write-Host $currentVersion -ForegroundColor White
     Write-Host ""
     Write-Host "Usage: " -NoNewline -ForegroundColor Yellow
-    Write-Host "pixi run release <version>" -ForegroundColor White
+    Write-Host "pixi run release <major|minor|patch|X.Y.Z>" -ForegroundColor White
     Write-Host ""
     Write-Host "Example: " -NoNewline -ForegroundColor Yellow
-    Write-Host "pixi run release 1.1.0" -ForegroundColor White
+    Write-Host "pixi run release patch" -ForegroundColor White
     exit 0
 }
 
-# Validate version format
-if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-    Write-Host "Error: Invalid version format '$Version'" -ForegroundColor Red
-    Write-Host "Use semantic versioning: X.Y.Z (e.g., 1.0.0, 1.2.3)" -ForegroundColor Yellow
+# Resolve major/minor/patch into a concrete version (or accept literal X.Y.Z)
+try {
+    $Version = Resolve-ReleaseVersion -Argument $Version -CurrentVersion $currentVersion
+} catch {
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
@@ -92,20 +93,11 @@ Write-Host "Current version: $currentVersion" -ForegroundColor Gray
 Write-Host "New version:     $Version" -ForegroundColor Green
 Write-Host ""
 
-# Confirm
-Write-Host "This will:" -ForegroundColor Yellow
+Write-Host "Steps:" -ForegroundColor Yellow
 Write-Host "  1. Update version in csproj and plugin source" -ForegroundColor White
 Write-Host "  2. Build and update prebuilt DLLs" -ForegroundColor White
 Write-Host "  3. Commit all changes" -ForegroundColor White
 Write-Host "  4. Create tag $tagName and push (triggers release workflow)" -ForegroundColor White
-Write-Host ""
-
-$confirm = Read-Host "Continue? (y/N)"
-if ($confirm -ne 'y' -and $confirm -ne 'Y') {
-    Write-Host "Cancelled" -ForegroundColor Yellow
-    exit 0
-}
-
 Write-Host ""
 
 # Step 1: Update version in csproj

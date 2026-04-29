@@ -73,6 +73,29 @@ foreach ($dll in $modDlls) {
     Write-Host "  plugins/$dll" -ForegroundColor Green
 }
 
+# Copy vendored loader (install.cmd extracts this at runtime)
+$vendorSrc = Join-Path $projectDir "vendor\bepinex"
+if (-not (Test-Path $vendorSrc)) {
+    throw "Vendored BepInEx folder not found: $vendorSrc. Run 'pixi run update-deps' to populate it, then commit."
+}
+$vendorZipSrc = Join-Path $vendorSrc "BepInEx_win_x86.zip"
+if (-not (Test-Path $vendorZipSrc)) {
+    throw "Vendored BepInEx zip not found: $vendorZipSrc. Run 'pixi run update-deps' to refresh, then commit."
+}
+
+$vendorDest = Join-Path $ghStagingDir "vendor\bepinex"
+New-Item -ItemType Directory -Path $vendorDest -Force | Out-Null
+
+# Per AGENTS.md: vendor dirs ship the loader zip + LICENSE + README.md only - no scripts.
+foreach ($vendorFile in @("BepInEx_win_x86.zip", "LICENSE", "README.md")) {
+    $src = Join-Path $vendorSrc $vendorFile
+    if (-not (Test-Path $src)) {
+        throw "Required vendor file not found: $src"
+    }
+    Copy-Item $src -Destination $vendorDest -Force
+    Write-Host "  vendor/bepinex/$vendorFile" -ForegroundColor Green
+}
+
 # Copy documentation
 $docFiles = @("README.md", "LICENSE", "CHANGELOG.md", "THIRD-PARTY-NOTICES.md")
 foreach ($doc in $docFiles) {

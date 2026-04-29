@@ -17,7 +17,7 @@ namespace HeadTracking.Config
         public ConfigEntry<KeyCode> ToggleKey { get; private set; }
         public ConfigEntry<KeyCode> RecenterKey { get; private set; }
         public ConfigEntry<KeyCode> ToggleReticleKey { get; private set; }
-        public ConfigEntry<KeyCode> TogglePositionKey { get; private set; }
+        public ConfigEntry<KeyCode> CycleTrackingModeKey { get; private set; }
         // UI settings
         public ConfigEntry<bool> ShowConnectionNotifications { get; private set; }
         public ConfigEntry<bool> ShowReticle { get; private set; }
@@ -94,28 +94,28 @@ namespace HeadTracking.Config
                 "Keybindings",
                 "ToggleKey",
                 KeyCode.End,
-                "Key to toggle head tracking on/off"
+                "Key to toggle head tracking on/off (also Ctrl+Shift+Y)"
             );
 
             RecenterKey = config.Bind(
                 "Keybindings",
                 "RecenterKey",
                 KeyCode.Home,
-                "Key to recenter head tracking (resets offset to current head position)"
+                "Key to recenter head tracking, resets offset to current head position (also Ctrl+Shift+T)"
             );
 
             ToggleReticleKey = config.Bind(
                 "Keybindings",
                 "ToggleReticleKey",
-                KeyCode.Insert,
-                "Key to toggle the aim reticle on/off"
+                KeyCode.PageDown,
+                "Key to toggle the aim reticle on/off (also Ctrl+Shift+H)"
             );
 
-            TogglePositionKey = config.Bind(
+            CycleTrackingModeKey = config.Bind(
                 "Keybindings",
-                "TogglePositionKey",
+                "CycleTrackingModeKey",
                 KeyCode.PageUp,
-                "Key to toggle positional tracking on/off"
+                "Key to cycle tracking mode: normal -> rotation only -> position only -> normal (also Ctrl+Shift+G)"
             );
 
             // Network section
