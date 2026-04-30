@@ -108,6 +108,10 @@ foreach ($doc in $docFiles) {
     }
 }
 
+# install.cmd / uninstall.cmd resolve the game via shared/find-game.ps1.
+# Bundle that shim alongside them so the release ZIP is self-contained.
+Copy-SharedBundle -StagingDir $ghStagingDir
+
 $ghZipName = "ObraDinnHeadTracking-v$version-installer.zip"
 $ghZipPath = Join-Path $releaseDir $ghZipName
 if (Test-Path $ghZipPath) { Remove-Item $ghZipPath -Force }
