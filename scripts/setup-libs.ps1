@@ -1,7 +1,9 @@
 #!/usr/bin/env pwsh
 # Stage build-time references into src/ObraDinnHeadTracking/libs.
-# BepInEx + Harmony come from the committed vendor zip; Unity DLLs come from
-# the game's Managed folder. Runs before restore/build via pixi.
+# BepInEx + Harmony come from the committed vendor zip; Unity DLLs are
+# built from the committed UnityStubs.*.cs source files (same stubs CI
+# uses) so local IL matches CI IL exactly. Runs before restore/build
+# via pixi.
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
@@ -44,40 +46,14 @@ if ($missingBep.Count -gt 0) {
     }
 }
 
-$unityDlls = @(
-    "UnityEngine.dll",
-    "UnityEngine.CoreModule.dll",
-    "UnityEngine.IMGUIModule.dll",
-    "UnityEngine.InputModule.dll",
-    "UnityEngine.TextRenderingModule.dll",
-    "UnityEngine.PhysicsModule.dll",
-    "UnityEngine.UIModule.dll"
-)
-$missingUnity = $unityDlls | Where-Object { -not (Test-Path (Join-Path $libsPath $_)) }
-
-if ($missingUnity.Count -gt 0) {
-    $modulePath = Join-Path $projectRoot "cameraunlock-core\powershell\GamePathDetection.psm1"
-    Import-Module $modulePath -Force
-
-    $gamePath = Find-GamePath -GameId 'obra-dinn'
-    if (-not $gamePath) {
-        Write-Host "ERROR: Return of the Obra Dinn install not found." -ForegroundColor Red
-        Write-Host "Set OBRA_DINN_PATH or install the game via Steam, then re-run." -ForegroundColor Yellow
-        Write-Host "Missing Unity DLLs: $($missingUnity -join ', ')" -ForegroundColor Yellow
-        exit 1
-    }
-
-    $managedPath = Join-Path $gamePath "ObraDinn_Data\Managed"
-    Write-Host "Staging Unity DLLs from $managedPath..." -ForegroundColor Yellow
-    foreach ($dll in $missingUnity) {
-        $src = Join-Path $managedPath $dll
-        if (-not (Test-Path $src)) {
-            Write-Host "ERROR: $dll not present in game's Managed folder: $src" -ForegroundColor Red
-            exit 1
-        }
-        Copy-Item $src (Join-Path $libsPath $dll) -Force
-        Write-Host "  Copied: $dll" -ForegroundColor Gray
-    }
+# Unity stubs: always rebuild from source so they stay in lockstep with
+# the committed UnityStubs.*.cs. Building against the user's installed
+# game's real Unity DLLs would produce IL that diverges from CI's
+# stub-built IL, and that divergence has bitten us in production.
+& (Join-Path $scriptDir "build-unity-stubs.ps1") -LibsPath $libsPath
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Unity stub build failed" -ForegroundColor Red
+    exit 1
 }
 
 Write-Host "libs/ ready for build." -ForegroundColor Green

@@ -52,103 +52,12 @@ jobs:
 
           Write-Host "BepInEx DLLs staged from $vendorZip" -ForegroundColor Green
 
-      - name: Create Unity stub assemblies for CI
+      - name: Build Unity stub assemblies
         shell: pwsh
-        run: |
-          Write-Host "Creating Unity stub assemblies for CI build..." -ForegroundColor Cyan
-
-          $libsPath = "src/ObraDinnHeadTracking/libs"
-
-          # Each Unity 2017 module gets its proper slice so the IL emitted by
-          # downstream csprojs references types in the same module they live in
-          # at runtime (e.g. [UnityEngine.CoreModule]UnityEngine.Camera, not
-          # [UnityEngine]UnityEngine.Camera). Compile order is dependency-driven:
-          # CoreModule first, then leaf modules referencing it, then UI which
-          # needs CoreModule + UIModule + TextRenderingModule.
-          # AssemblyVersion 0.0.0.0 matches Unity 2017's runtime DLLs - without
-          # this, Mono fails to bind the plugin at load time.
-
-          function Build-StubModule {
-              param(
-                  [string]$ModuleName,
-                  [string]$SourceFile,
-                  [string[]]$References
-              )
-              $refXml = ""
-              foreach ($r in $References) {
-                  # HintPath is relative to the csproj's directory. The csproj
-                  # is generated INTO $libsPath, so the referenced DLL is a
-                  # sibling - no path prefix.
-                  $refXml += "    <Reference Include=`"$r`"><HintPath>$r.dll</HintPath></Reference>`n"
-              }
-              $projContent = @"
-          <Project Sdk="Microsoft.NET.Sdk">
-            <PropertyGroup>
-              <TargetFramework>net35</TargetFramework>
-              <LangVersion>7.3</LangVersion>
-              <AssemblyName>$ModuleName</AssemblyName>
-              <AssemblyVersion>0.0.0.0</AssemblyVersion>
-              <FileVersion>0.0.0.0</FileVersion>
-              <Version>0.0.0.0</Version>
-              <NoWarn>CS0169;CS0649;CS0067;CS0660;CS0661</NoWarn>
-              <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
-            </PropertyGroup>
-            <ItemGroup>
-              <Compile Include="$SourceFile" />
-          $refXml  </ItemGroup>
-          </Project>
-          "@
-              $projPath = Join-Path $libsPath "Stub_$ModuleName.csproj"
-              $projContent | Out-File -FilePath $projPath -Encoding utf8
-
-              dotnet build $projPath -c Release -o $libsPath --nologo -v q
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Host "::error::Failed to build $ModuleName stub"
-                  exit 1
-              }
-              Write-Host "  Created $ModuleName.dll" -ForegroundColor Green
-              Remove-Item $projPath -ErrorAction SilentlyContinue
-          }
-
-          # CoreModule first - everything else may reference its types.
-          Build-StubModule -ModuleName "UnityEngine.CoreModule" -SourceFile "UnityStubs.CoreModule.cs" -References @()
-
-          Build-StubModule -ModuleName "UnityEngine.TextRenderingModule" -SourceFile "UnityStubs.TextRenderingModule.cs" -References @("UnityEngine.CoreModule")
-          Build-StubModule -ModuleName "UnityEngine.PhysicsModule"       -SourceFile "UnityStubs.PhysicsModule.cs"       -References @("UnityEngine.CoreModule")
-          Build-StubModule -ModuleName "UnityEngine.UIModule"            -SourceFile "UnityStubs.UIModule.cs"            -References @("UnityEngine.CoreModule")
-          Build-StubModule -ModuleName "UnityEngine.IMGUIModule"         -SourceFile "UnityStubs.IMGUIModule.cs"         -References @("UnityEngine.CoreModule", "UnityEngine.TextRenderingModule")
-
-          # Unity 2017 reality: `Input` and `KeyCode` live in CoreModule, not
-          # in a separate InputLegacyModule (that split happened in 2018+).
-          # OBRA's csproj references UnityEngine.InputModule (EventSystems
-          # module) so we ship an empty placeholder DLL for that. We do NOT
-          # build UnityEngine.InputLegacyModule.dll - if we did, Core.Unity's
-          # `Condition="Exists('...InputLegacyModule.dll')"` reference would
-          # fire, IL would emit `[UnityEngine.InputLegacyModule]Input`, and
-          # the plugin would silently fail to JIT under Unity 2017 (where no
-          # such DLL exists at runtime).
-          Build-StubModule -ModuleName "UnityEngine.InputModule"       -SourceFile "UnityStubs.InputModule.cs"       -References @()
-
-          # UnityEngine.dll is mostly type forwarders into the module DLLs in
-          # real Unity 2017. UnityStubs.Engine.cs uses [TypeForwardedTo] so it
-          # needs every module DLL it forwards into available as a reference.
-          Build-StubModule -ModuleName "UnityEngine" -SourceFile "UnityStubs.Engine.cs" -References @(
-              "UnityEngine.CoreModule",
-              "UnityEngine.IMGUIModule",
-              "UnityEngine.PhysicsModule",
-              "UnityEngine.TextRenderingModule",
-              "UnityEngine.UIModule"
-          )
-
-          # UI references types from CoreModule, UIModule, TextRenderingModule.
-          Build-StubModule -ModuleName "UnityEngine.UI" -SourceFile "UnityStubs.UI.cs" -References @("UnityEngine.CoreModule", "UnityEngine.UIModule", "UnityEngine.TextRenderingModule")
-
-          # Cleanup temp files
-          Remove-Item (Join-Path $libsPath "*.deps.json") -Force -ErrorAction SilentlyContinue
-          Remove-Item (Join-Path $libsPath "*.pdb") -Force -ErrorAction SilentlyContinue
-          Remove-Item (Join-Path $libsPath "obj") -Recurse -Force -ErrorAction SilentlyContinue
-
-          Write-Host "Unity stub assemblies created successfully" -ForegroundColor Green
+        # Same script local devs run via `pixi run setup-libs`, so CI IL
+        # and local IL stay in lockstep. If you change the stub layout,
+        # change it in scripts/build-unity-stubs.ps1, not here.
+        run: scripts/build-unity-stubs.ps1 -LibsPath src/ObraDinnHeadTracking/libs
 
       - name: Restore NuGet packages
         shell: pwsh
