@@ -30,6 +30,7 @@ $result = Invoke-DevDeployBepInEx `
     -ModDllName 'ObraDinnHeadTracking.dll' `
     -ExtraDlls @('CameraUnlock.Core.dll', 'CameraUnlock.Core.Unity.dll') `
     -GivenPath $GivenPath `
+    -Architecture x86 `
     -EnsureLoader
 
 Write-DeploymentSuccess `

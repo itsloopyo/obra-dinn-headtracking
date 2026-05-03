@@ -106,6 +106,15 @@ $pluginContent = $pluginContent -replace 'PluginVersion = "[^"]+"', "PluginVersi
 $pluginContent | Set-Content $pluginPath -NoNewline
 Write-Host "  Updated HeadTrackingPlugin.cs" -ForegroundColor Gray
 
+# Step 2b: Sync install.cmd MOD_VERSION so the state file's mod.version
+# matches what the plugin actually announces. install.cmd is CRLF; the
+# regex preserves whatever line endings already exist in the file.
+$installCmdPath = Join-Path $projectDir "scripts\install.cmd"
+$installCmdContent = Get-Content $installCmdPath -Raw
+$installCmdContent = $installCmdContent -replace 'set "MOD_VERSION=[^"]+"', "set `"MOD_VERSION=$Version`""
+$installCmdContent | Set-Content $installCmdPath -NoNewline
+Write-Host "  Updated install.cmd MOD_VERSION" -ForegroundColor Gray
+
 # Step 3: Build and update prebuilt DLLs
 Write-Host "Building release..." -ForegroundColor Cyan
 Push-Location $projectDir
