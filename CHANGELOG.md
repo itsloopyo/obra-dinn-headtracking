@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.1] - 2026-05-03
+
+### Other
+
+- Add DX11 overlay header for crosshair rendering
+- Update PositionInterpolator tests for bounded extrapolation
+- Skip vendor refresh when SHA-256 matches existing copy
+- Fix degenerate-input bugs in scanners, projection, and color parser
+- Add yaw-mode key and WorldSpaceYaw config options
+- Quote /y flag detection and add shared install/uninstall bodies
+- Add DevDeploy module with Cecil dev-install orchestrator
+- Auto-refresh cameraunlock-core submodule in Copy-SharedBundle
+- Add install bodies and dev-deploy orchestrators for non-Cecil frameworks
+- Convert deploy/install/uninstall scripts to thin wrappers
+- Resolve exe relpath from games.json in ASI/shim dev-deploy
+- Add automatic port retry to C++ UdpReceiver
+- Take BuildOutputPath in dev-deploy and add loader/config auto-install
+- Adapt deploy.ps1 to BuildOutputPath signature
+- Verify existing BepInEx loader arch and replace on mismatch
+- Fall back to dev-tree vendor path in BepInEx install body
+- Pass -Architecture x86 to dev-deploy and sync MOD_VERSION on release
+- Use the same Unity stubs locally and in CI
+- Revert Unity stubs to monolithic UnityEngine.dll layout
+- Match Unity 2017's UnityAction<Scene, LoadSceneMode> on sceneLoaded
+
 ## [1.1.0] - 2026-05-01
 
 ### Added
