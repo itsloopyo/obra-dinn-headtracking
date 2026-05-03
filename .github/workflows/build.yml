@@ -124,8 +124,17 @@ jobs:
           Build-StubModule -ModuleName "UnityEngine.InputModule"       -SourceFile "UnityStubs.InputLegacyModule.cs" -References @("UnityEngine.CoreModule")
           Build-StubModule -ModuleName "UnityEngine.InputLegacyModule" -SourceFile "UnityStubs.InputLegacyModule.cs" -References @("UnityEngine.CoreModule")
 
-          # UnityEngine.dll is near-empty; in real Unity 2017 it's mostly type forwarders.
-          Build-StubModule -ModuleName "UnityEngine" -SourceFile "UnityStubs.Engine.cs" -References @()
+          # UnityEngine.dll is mostly type forwarders into the module DLLs in
+          # real Unity 2017. UnityStubs.Engine.cs uses [TypeForwardedTo] so it
+          # needs every module DLL it forwards into available as a reference.
+          Build-StubModule -ModuleName "UnityEngine" -SourceFile "UnityStubs.Engine.cs" -References @(
+              "UnityEngine.CoreModule",
+              "UnityEngine.IMGUIModule",
+              "UnityEngine.InputLegacyModule",
+              "UnityEngine.PhysicsModule",
+              "UnityEngine.TextRenderingModule",
+              "UnityEngine.UIModule"
+          )
 
           # UI references types from CoreModule, UIModule, TextRenderingModule.
           Build-StubModule -ModuleName "UnityEngine.UI" -SourceFile "UnityStubs.UI.cs" -References @("UnityEngine.CoreModule", "UnityEngine.UIModule", "UnityEngine.TextRenderingModule")
