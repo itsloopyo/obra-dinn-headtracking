@@ -76,7 +76,10 @@ jobs:
               )
               $refXml = ""
               foreach ($r in $References) {
-                  $refXml += "    <Reference Include=`"$r`"><HintPath>$libsPath\$r.dll</HintPath></Reference>`n"
+                  # HintPath is relative to the csproj's directory. The csproj
+                  # is generated INTO $libsPath, so the referenced DLL is a
+                  # sibling - no path prefix.
+                  $refXml += "    <Reference Include=`"$r`"><HintPath>$r.dll</HintPath></Reference>`n"
               }
               $projContent = @"
           <Project Sdk="Microsoft.NET.Sdk">
