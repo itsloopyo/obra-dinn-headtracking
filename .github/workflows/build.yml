@@ -118,11 +118,16 @@ jobs:
           Build-StubModule -ModuleName "UnityEngine.UIModule"            -SourceFile "UnityStubs.UIModule.cs"            -References @("UnityEngine.CoreModule")
           Build-StubModule -ModuleName "UnityEngine.IMGUIModule"         -SourceFile "UnityStubs.IMGUIModule.cs"         -References @("UnityEngine.CoreModule", "UnityEngine.TextRenderingModule")
 
-          # InputLegacyModule slice compiled into BOTH UnityEngine.InputModule.dll
-          # (OBRA csproj reference name) and UnityEngine.InputLegacyModule.dll
-          # (CameraUnlock.Core.Unity reference name).
-          Build-StubModule -ModuleName "UnityEngine.InputModule"       -SourceFile "UnityStubs.InputLegacyModule.cs" -References @("UnityEngine.CoreModule")
-          Build-StubModule -ModuleName "UnityEngine.InputLegacyModule" -SourceFile "UnityStubs.InputLegacyModule.cs" -References @("UnityEngine.CoreModule")
+          # Unity 2017 reality: `Input` and `KeyCode` live in CoreModule, not
+          # in a separate InputLegacyModule (that split happened in 2018+).
+          # OBRA's csproj references UnityEngine.InputModule (EventSystems
+          # module) so we ship an empty placeholder DLL for that. We do NOT
+          # build UnityEngine.InputLegacyModule.dll - if we did, Core.Unity's
+          # `Condition="Exists('...InputLegacyModule.dll')"` reference would
+          # fire, IL would emit `[UnityEngine.InputLegacyModule]Input`, and
+          # the plugin would silently fail to JIT under Unity 2017 (where no
+          # such DLL exists at runtime).
+          Build-StubModule -ModuleName "UnityEngine.InputModule"       -SourceFile "UnityStubs.InputModule.cs"       -References @()
 
           # UnityEngine.dll is mostly type forwarders into the module DLLs in
           # real Unity 2017. UnityStubs.Engine.cs uses [TypeForwardedTo] so it
@@ -130,7 +135,6 @@ jobs:
           Build-StubModule -ModuleName "UnityEngine" -SourceFile "UnityStubs.Engine.cs" -References @(
               "UnityEngine.CoreModule",
               "UnityEngine.IMGUIModule",
-              "UnityEngine.InputLegacyModule",
               "UnityEngine.PhysicsModule",
               "UnityEngine.TextRenderingModule",
               "UnityEngine.UIModule"

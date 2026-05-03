@@ -62,6 +62,8 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(UnityEngine.HeaderAttribute))]
 [assembly: TypeForwardedTo(typeof(UnityEngine.TooltipAttribute))]
 [assembly: TypeForwardedTo(typeof(UnityEngine.RangeAttribute))]
+[assembly: TypeForwardedTo(typeof(UnityEngine.Input))]
+[assembly: TypeForwardedTo(typeof(UnityEngine.KeyCode))]
 
 // CoreModule - UnityEngine.Rendering
 [assembly: TypeForwardedTo(typeof(UnityEngine.Rendering.RenderPipelineAsset))]
@@ -85,10 +87,6 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(UnityEngine.GUI))]
 [assembly: TypeForwardedTo(typeof(UnityEngine.GUIContent))]
 [assembly: TypeForwardedTo(typeof(UnityEngine.GUISkin))]
-
-// InputLegacyModule
-[assembly: TypeForwardedTo(typeof(UnityEngine.Input))]
-[assembly: TypeForwardedTo(typeof(UnityEngine.KeyCode))]
 
 // PhysicsModule
 [assembly: TypeForwardedTo(typeof(UnityEngine.Rigidbody))]
