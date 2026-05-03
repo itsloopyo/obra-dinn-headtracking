@@ -22,13 +22,12 @@ $projectRoot = Split-Path -Parent $scriptDir
 
 Import-Module (Join-Path $projectRoot "cameraunlock-core\powershell\DevDeploy.psm1") -Force
 Import-Module (Join-Path $projectRoot "cameraunlock-core\powershell\ModDeployment.psm1") -Force
+$buildOutput = Join-Path $projectRoot "src\ObraDinnHeadTracking\bin\$Configuration\net35"
 $result = Invoke-DevDeployBepInEx `
     -GameId 'obra-dinn' `
     -GameDisplayName 'Return of the Obra Dinn' `
-    -ProjectRoot $projectRoot `
-    -ProjectName 'ObraDinnHeadTracking' `
+    -BuildOutputPath $buildOutput `
     -ModDllName 'ObraDinnHeadTracking.dll' `
-    -Configuration $Configuration `
     -ExtraDlls @('CameraUnlock.Core.dll', 'CameraUnlock.Core.Unity.dll') `
     -GivenPath $GivenPath `
     -EnsureLoader
