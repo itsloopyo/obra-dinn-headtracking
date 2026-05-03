@@ -1,4 +1,4 @@
-// Unity stub for CI builds — CoreModule slice
+﻿// Unity stub for CI builds - contains all types needed by CameraUnlock.Core.Unity
 namespace UnityEngine {
     public class Object {
         public static void Destroy(Object obj) { }
@@ -220,6 +220,28 @@ namespace UnityEngine {
         public static int frameCount { get; }
         public static float realtimeSinceStartup { get; }
     }
+    public static class Input {
+        public static bool GetKeyDown(KeyCode key) => false;
+        public static bool GetKeyUp(KeyCode key) => false;
+        public static bool GetKey(KeyCode key) => false;
+        public static bool GetMouseButton(int button) => false;
+        public static bool GetMouseButtonDown(int button) => false;
+        public static bool GetMouseButtonUp(int button) => false;
+        public static float GetAxis(string axisName) => 0;
+        public static float GetAxisRaw(string axisName) => 0;
+        public static Vector3 mousePosition { get; }
+    }
+    public enum KeyCode {
+        None = 0, Backspace = 8, Tab = 9, Clear = 12, Return = 13, Pause = 19, Escape = 27, Space = 32,
+        Alpha0 = 48, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9,
+        A = 97, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+        Delete = 127, Keypad0 = 256, Keypad1, Keypad2, Keypad3, Keypad4, Keypad5, Keypad6, Keypad7, Keypad8, Keypad9,
+        F1 = 282, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
+        UpArrow = 273, DownArrow = 274, RightArrow = 275, LeftArrow = 276,
+        Insert = 277, Home = 278, End = 279, PageUp = 280, PageDown = 281,
+        RightShift = 303, LeftShift = 304, RightControl = 305, LeftControl = 306,
+        RightAlt = 307, LeftAlt = 308, Mouse0 = 323, Mouse1, Mouse2
+    }
     public static class Mathf {
         public const float PI = 3.14159274f;
         public const float Deg2Rad = 0.0174532924f;
@@ -263,6 +285,118 @@ namespace UnityEngine {
         public static void LogErrorFormat(string format, params object[] args) { }
         public static void DrawLine(Vector3 start, Vector3 end) { }
         public static void DrawRay(Vector3 start, Vector3 dir) { }
+    }
+    public static class GUIUtility {
+        public static int keyboardControl { get; set; }
+        public static int hotControl { get; set; }
+    }
+    public class GUIStyle {
+        public GUIStyle() { }
+        public GUIStyle(GUIStyle other) { }
+        public int fontSize { get; set; }
+        public TextAnchor alignment { get; set; }
+        public GUIStyleState normal { get; set; }
+        public Font font { get; set; }
+        public bool wordWrap { get; set; }
+        public FontStyle fontStyle { get; set; }
+        public Vector2 CalcSize(GUIContent content) => default;
+    }
+    public enum FontStyle { Normal, Bold, Italic, BoldAndItalic }
+    public class GUIStyleState {
+        public Color textColor { get; set; }
+        public Texture2D background { get; set; }
+    }
+    public class Font : Object { }
+    public enum TextAnchor { UpperLeft, UpperCenter, UpperRight, MiddleLeft, MiddleCenter, MiddleRight, LowerLeft, LowerCenter, LowerRight }
+    public static class GUI {
+        public static Color color { get; set; }
+        public static Color backgroundColor { get; set; }
+        public static Color contentColor { get; set; }
+        public static Matrix4x4 matrix { get; set; }
+        public static GUISkin skin { get; set; }
+        public static void Label(Rect position, string text) { }
+        public static void Label(Rect position, string text, GUIStyle style) { }
+        public static void Label(Rect position, GUIContent content) { }
+        public static void Label(Rect position, GUIContent content, GUIStyle style) { }
+        public static void Box(Rect position, string text) { }
+        public static void Box(Rect position, string text, GUIStyle style) { }
+        public static void Box(Rect position, GUIContent content) { }
+        public static void Box(Rect position, GUIContent content, GUIStyle style) { }
+        public static bool Button(Rect position, string text) => false;
+        public static bool Button(Rect position, string text, GUIStyle style) => false;
+        public static void DrawTexture(Rect position, Texture image) { }
+        public static void DrawTexture(Rect position, Texture image, ScaleMode scaleMode) { }
+        public static void BeginGroup(Rect position) { }
+        public static void EndGroup() { }
+    }
+    public class GUIContent {
+        public static GUIContent none => new GUIContent();
+        public string text { get; set; }
+        public Texture image { get; set; }
+        public GUIContent() { }
+        public GUIContent(string text) { this.text = text; }
+    }
+    public class GUISkin : Object {
+        public GUIStyle label { get; }
+        public GUIStyle button { get; }
+        public GUIStyle box { get; }
+    }
+    public class Texture : Object { public int width { get; } public int height { get; } }
+    public class Sprite : Object {
+        public Texture2D texture { get; }
+        public Rect rect { get; }
+    }
+    public class Texture2D : Texture {
+        public Texture2D(int width, int height) { }
+        public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
+        public FilterMode filterMode { get; set; }
+        public void SetPixel(int x, int y, Color color) { }
+        public void SetPixels(Color[] colors) { }
+        public Color GetPixel(int x, int y) => default;
+        public Color[] GetPixels() => new Color[0];
+        public void Apply() { }
+        public static Texture2D whiteTexture { get; }
+    }
+    public enum TextureFormat { Alpha8, ARGB4444, RGB24, RGBA32, ARGB32, RGB565, R16, DXT1, DXT5 }
+    public enum FilterMode { Point, Bilinear, Trilinear }
+    public enum ScaleMode { StretchToFill, ScaleAndCrop, ScaleToFit }
+    public struct Rect {
+        public float x, y, width, height;
+        public Rect(float x, float y, float width, float height) { this.x = x; this.y = y; this.width = width; this.height = height; }
+        public float xMin { get => x; set => x = value; }
+        public float xMax { get => x + width; set => width = value - x; }
+        public float yMin { get => y; set => y = value; }
+        public float yMax { get => y + height; set => height = value - y; }
+        public Vector2 center { get => new Vector2(x + width / 2, y + height / 2); set { x = value.x - width / 2; y = value.y - height / 2; } }
+        public Vector2 size { get => new Vector2(width, height); set { width = value.x; height = value.y; } }
+        public bool Contains(Vector2 point) => false;
+    }
+    public struct Color {
+        public float r, g, b, a;
+        public Color(float r, float g, float b) { this.r = r; this.g = g; this.b = b; this.a = 1; }
+        public Color(float r, float g, float b, float a) { this.r = r; this.g = g; this.b = b; this.a = a; }
+        public static Color white => new Color(1, 1, 1, 1);
+        public static Color black => new Color(0, 0, 0, 1);
+        public static Color red => new Color(1, 0, 0, 1);
+        public static Color green => new Color(0, 1, 0, 1);
+        public static Color blue => new Color(0, 0, 1, 1);
+        public static Color yellow => new Color(1, 1, 0, 1);
+        public static Color cyan => new Color(0, 1, 1, 1);
+        public static Color magenta => new Color(1, 0, 1, 1);
+        public static Color gray => new Color(0.5f, 0.5f, 0.5f, 1);
+        public static Color grey => gray;
+        public static Color clear => new Color(0, 0, 0, 0);
+        public static Color Lerp(Color a, Color b, float t) => default;
+        public static bool operator ==(Color lhs, Color rhs) => lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
+        public static bool operator !=(Color lhs, Color rhs) => !(lhs == rhs);
+        public override bool Equals(object other) => false;
+        public override int GetHashCode() => 0;
+    }
+    public struct Color32 {
+        public byte r, g, b, a;
+        public Color32(byte r, byte g, byte b, byte a) { this.r = r; this.g = g; this.b = b; this.a = a; }
+        public static implicit operator Color(Color32 c) => new Color(c.r / 255f, c.g / 255f, c.b / 255f, c.a / 255f);
+        public static implicit operator Color32(Color c) => new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(c.a * 255));
     }
     public class Material : Object {
         public Material(Shader shader) { }
@@ -315,6 +449,52 @@ namespace UnityEngine {
         public static void DeleteKey(string key) { }
         public static void Save() { }
     }
+    public class Rigidbody : Component {
+        public Vector3 velocity { get; set; }
+        public Vector3 angularVelocity { get; set; }
+        public bool isKinematic { get; set; }
+        public bool useGravity { get; set; }
+    }
+    public class Collider : Component {
+        public bool enabled { get; set; }
+        public bool isTrigger { get; set; }
+    }
+    public struct RaycastHit {
+        public Vector3 point { get; }
+        public Vector3 normal { get; }
+        public float distance { get; }
+        public Collider collider { get; }
+        public Transform transform { get; }
+    }
+    public static class Physics {
+        public static bool Raycast(Ray ray, out RaycastHit hitInfo) { hitInfo = default; return false; }
+        public static bool Raycast(Ray ray, out RaycastHit hitInfo, float maxDistance) { hitInfo = default; return false; }
+        public static bool Raycast(Ray ray, out RaycastHit hitInfo, float maxDistance, int layerMask) { hitInfo = default; return false; }
+        public static bool Raycast(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance) { hitInfo = default; return false; }
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance) => false;
+        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, int layerMask) => false;
+    }
+    public class Canvas : Behaviour {
+        public static event WillRenderCanvases willRenderCanvases;
+        public delegate void WillRenderCanvases();
+        public RenderMode renderMode { get; set; }
+        public Camera worldCamera { get; set; }
+        public float scaleFactor { get; set; }
+    }
+    public enum RenderMode { ScreenSpaceOverlay, ScreenSpaceCamera, WorldSpace }
+    public class RectTransform : Transform {
+        public Vector2 anchoredPosition { get; set; }
+        public Vector2 sizeDelta { get; set; }
+        public Vector2 anchorMin { get; set; }
+        public Vector2 anchorMax { get; set; }
+        public Vector2 pivot { get; set; }
+        public Rect rect { get; }
+    }
+    public class CanvasGroup : Behaviour {
+        public float alpha { get; set; }
+        public bool interactable { get; set; }
+        public bool blocksRaycasts { get; set; }
+    }
     public static class Resources {
         public static T Load<T>(string path) where T : Object => default;
         public static Object Load(string path) => default;
@@ -327,62 +507,6 @@ namespace UnityEngine {
         public static string LayerToName(int layer) => "";
         public static implicit operator int(LayerMask mask) => mask.value;
         public static implicit operator LayerMask(int intVal) => new LayerMask { value = intVal };
-    }
-    public struct Color {
-        public float r, g, b, a;
-        public Color(float r, float g, float b) { this.r = r; this.g = g; this.b = b; this.a = 1; }
-        public Color(float r, float g, float b, float a) { this.r = r; this.g = g; this.b = b; this.a = a; }
-        public static Color white => new Color(1, 1, 1, 1);
-        public static Color black => new Color(0, 0, 0, 1);
-        public static Color red => new Color(1, 0, 0, 1);
-        public static Color green => new Color(0, 1, 0, 1);
-        public static Color blue => new Color(0, 0, 1, 1);
-        public static Color yellow => new Color(1, 1, 0, 1);
-        public static Color cyan => new Color(0, 1, 1, 1);
-        public static Color magenta => new Color(1, 0, 1, 1);
-        public static Color gray => new Color(0.5f, 0.5f, 0.5f, 1);
-        public static Color grey => gray;
-        public static Color clear => new Color(0, 0, 0, 0);
-        public static Color Lerp(Color a, Color b, float t) => default;
-        public static bool operator ==(Color lhs, Color rhs) => lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
-        public static bool operator !=(Color lhs, Color rhs) => !(lhs == rhs);
-        public override bool Equals(object other) => false;
-        public override int GetHashCode() => 0;
-    }
-    public struct Color32 {
-        public byte r, g, b, a;
-        public Color32(byte r, byte g, byte b, byte a) { this.r = r; this.g = g; this.b = b; this.a = a; }
-        public static implicit operator Color(Color32 c) => new Color(c.r / 255f, c.g / 255f, c.b / 255f, c.a / 255f);
-        public static implicit operator Color32(Color c) => new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(c.a * 255));
-    }
-    public class Texture : Object { public int width { get; } public int height { get; } }
-    public class Texture2D : Texture {
-        public Texture2D(int width, int height) { }
-        public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
-        public FilterMode filterMode { get; set; }
-        public void SetPixel(int x, int y, Color color) { }
-        public void SetPixels(Color[] colors) { }
-        public Color GetPixel(int x, int y) => default;
-        public Color[] GetPixels() => new Color[0];
-        public void Apply() { }
-        public static Texture2D whiteTexture { get; }
-    }
-    public enum TextureFormat { Alpha8, ARGB4444, RGB24, RGBA32, ARGB32, RGB565, R16, DXT1, DXT5 }
-    public enum FilterMode { Point, Bilinear, Trilinear }
-    public class Sprite : Object {
-        public Texture2D texture { get; }
-        public Rect rect { get; }
-    }
-    public struct Rect {
-        public float x, y, width, height;
-        public Rect(float x, float y, float width, float height) { this.x = x; this.y = y; this.width = width; this.height = height; }
-        public float xMin { get => x; set => x = value; }
-        public float xMax { get => x + width; set => width = value - x; }
-        public float yMin { get => y; set => y = value; }
-        public float yMax { get => y + height; set => height = value - y; }
-        public Vector2 center { get => new Vector2(x + width / 2, y + height / 2); set { x = value.x - width / 2; y = value.y - height / 2; } }
-        public Vector2 size { get => new Vector2(width, height); set { width = value.x; height = value.y; } }
-        public bool Contains(Vector2 point) => false;
     }
     public static class GL {
         public static void PushMatrix() { }
@@ -397,37 +521,11 @@ namespace UnityEngine {
         public const int TRIANGLES = 4;
         public const int QUADS = 7;
     }
-    public enum ScaleMode { StretchToFill, ScaleAndCrop, ScaleToFit }
     [System.AttributeUsage(System.AttributeTargets.Field)] public class SerializeField : System.Attribute { }
     [System.AttributeUsage(System.AttributeTargets.Field)] public class HideInInspector : System.Attribute { }
     [System.AttributeUsage(System.AttributeTargets.Field)] public class HeaderAttribute : System.Attribute { public HeaderAttribute(string header) { } }
     [System.AttributeUsage(System.AttributeTargets.Field)] public class TooltipAttribute : System.Attribute { public TooltipAttribute(string tooltip) { } }
     [System.AttributeUsage(System.AttributeTargets.Field)] public class RangeAttribute : System.Attribute { public RangeAttribute(float min, float max) { } }
-    // Input + KeyCode live in CoreModule on Unity 2017. Unity 2018+ split them
-    // into UnityEngine.InputLegacyModule.dll, but Obra Dinn ships 2017, so the
-    // stub layout has to match: emit IL as [UnityEngine.CoreModule]Input.
-    public static class Input {
-        public static bool GetKeyDown(KeyCode key) => false;
-        public static bool GetKeyUp(KeyCode key) => false;
-        public static bool GetKey(KeyCode key) => false;
-        public static bool GetMouseButton(int button) => false;
-        public static bool GetMouseButtonDown(int button) => false;
-        public static bool GetMouseButtonUp(int button) => false;
-        public static float GetAxis(string axisName) => 0;
-        public static float GetAxisRaw(string axisName) => 0;
-        public static Vector3 mousePosition { get; }
-    }
-    public enum KeyCode {
-        None = 0, Backspace = 8, Tab = 9, Clear = 12, Return = 13, Pause = 19, Escape = 27, Space = 32,
-        Alpha0 = 48, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5, Alpha6, Alpha7, Alpha8, Alpha9,
-        A = 97, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-        Delete = 127, Keypad0 = 256, Keypad1, Keypad2, Keypad3, Keypad4, Keypad5, Keypad6, Keypad7, Keypad8, Keypad9,
-        F1 = 282, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
-        UpArrow = 273, DownArrow = 274, RightArrow = 275, LeftArrow = 276,
-        Insert = 277, Home = 278, End = 279, PageUp = 280, PageDown = 281,
-        RightShift = 303, LeftShift = 304, RightControl = 305, LeftControl = 306,
-        RightAlt = 307, LeftAlt = 308, Mouse0 = 323, Mouse1, Mouse2
-    }
 }
 namespace UnityEngine.Rendering {
     public enum RenderPipelineAsset { }
@@ -455,4 +553,29 @@ namespace UnityEngine.Events {
     public class UnityEvent<T0> { public void AddListener(UnityAction<T0> call) { } public void RemoveListener(UnityAction<T0> call) { } public void Invoke(T0 arg0) { } }
     public delegate void UnityAction();
     public delegate void UnityAction<T0>(T0 arg0);
+}
+namespace UnityEngine.UI {
+    public abstract class Graphic : UnityEngine.Behaviour {
+        public UnityEngine.Color color { get; set; }
+        public bool raycastTarget { get; set; }
+        public UnityEngine.RectTransform rectTransform { get; }
+        public UnityEngine.Canvas canvas { get; }
+        public virtual void SetNativeSize() { }
+    }
+    public class Image : Graphic {
+        public UnityEngine.Sprite sprite { get; set; }
+        public Type type { get; set; }
+        public bool fillCenter { get; set; }
+        public enum Type { Simple, Sliced, Tiled, Filled }
+    }
+    public class RawImage : Graphic {
+        public UnityEngine.Texture texture { get; set; }
+        public UnityEngine.Rect uvRect { get; set; }
+    }
+    public class Text : Graphic {
+        public string text { get; set; }
+        public UnityEngine.Font font { get; set; }
+        public int fontSize { get; set; }
+        public UnityEngine.TextAnchor alignment { get; set; }
+    }
 }
