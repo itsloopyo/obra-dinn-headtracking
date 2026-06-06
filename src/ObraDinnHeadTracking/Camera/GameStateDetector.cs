@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using CameraUnlock.Core.Unity.Utilities;
 using HeadTracking.Core;
 using HarmonyLib;
 using UnityEngine;
@@ -29,8 +30,8 @@ namespace HeadTracking.Camera
         private static bool _inputEnabledResolved;
 
         // Frame-level cache: avoids repeated reflection from OnGUI shouldDraw callbacks
-        private int _inputEnabledCacheFrame = -1;
-        private bool _inputEnabledCacheValue;
+        private readonly PerFrameCache<bool> _inputEnabledCache =
+            new PerFrameCache<bool>(GetPlayerInputEnabled);
 
         /// <summary>
         /// Event fired when game state changes.
@@ -59,13 +60,7 @@ namespace HeadTracking.Camera
                     return false;
                 }
 
-                int frame = Time.frameCount;
-                if (_inputEnabledCacheFrame != frame)
-                {
-                    _inputEnabledCacheFrame = frame;
-                    _inputEnabledCacheValue = GetPlayerInputEnabled();
-                }
-                return _inputEnabledCacheValue;
+                return _inputEnabledCache.Get();
             }
         }
 

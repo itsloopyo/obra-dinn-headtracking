@@ -335,47 +335,18 @@ namespace HeadTracking.Core
         /// </summary>
         private UnityEngine.Vector2 CalculateAimOffset()
         {
-            var cam = CameraPatches.CachedMainCamera;
+            var cam = _cameraController.GameplayCamera;
             if (cam == null)
             {
                 return UnityEngine.Vector2.zero;
             }
 
-            float yaw = _cameraController.LastTrackingYaw;
-            float pitch = _cameraController.LastTrackingPitch;
-            float roll = _cameraController.LastTrackingRoll;
-
-            float? vFovNullable = _cameraController.GameplayCameraFov;
-            if (!vFovNullable.HasValue)
-            {
-                return UnityEngine.Vector2.zero;
-            }
-
-            float vFov = vFovNullable.Value;
-            float tanHalfVFov = UnityEngine.Mathf.Tan(vFov * UnityEngine.Mathf.Deg2Rad * 0.5f);
-            float tanHalfHFov = tanHalfVFov * cam.aspect;
-
-            float halfWidth = UnityEngine.Screen.width * 0.5f;
-            float halfHeight = UnityEngine.Screen.height * 0.5f;
-
-            // With camera-local composition (gamePitch * headLocal), gamePitch
-            // cancels when projecting the original forward into the tracked frame.
-            // The aim direction in the tracked camera is just Inverse(headLocal) * forward.
-            var headLocal = UnityEngine.Quaternion.Euler(-pitch, yaw, roll);
-            UnityEngine.Vector3 aimInTracked = UnityEngine.Quaternion.Inverse(headLocal) * UnityEngine.Vector3.forward;
-
-            float bDepth = aimInTracked.z;
-            if (bDepth < 0.01f) bDepth = 0.01f;
-
-            float offsetX = (aimInTracked.x / bDepth) / tanHalfHFov * halfWidth;
-            float offsetY = (aimInTracked.y / bDepth) / tanHalfVFov * halfHeight;
-
-            if (float.IsNaN(offsetX) || float.IsNaN(offsetY))
-            {
-                return UnityEngine.Vector2.zero;
-            }
-
-            return new UnityEngine.Vector2(offsetX, offsetY);
+            // Pitch is negated to match ApplyComposedRotation's Euler(-pitch, yaw, roll) convention.
+            return UnityAimHelper.ComputeScreenOffsetFOV(
+                _cameraController.LastTrackingYaw,
+                -_cameraController.LastTrackingPitch,
+                _cameraController.LastTrackingRoll,
+                cam);
         }
 
         private void OnGameStateChanged(GameState newState)

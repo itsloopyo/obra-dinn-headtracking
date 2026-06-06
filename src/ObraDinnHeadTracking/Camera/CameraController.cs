@@ -3,6 +3,7 @@ using CameraUnlock.Core.Math;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
 using CameraUnlock.Core.Unity.Tracking;
+using CameraUnlock.Core.Unity.Utilities;
 using HeadTracking.Patches;
 using UnityEngine;
 
@@ -37,9 +38,8 @@ namespace HeadTracking.Camera
         private const float TransitionInDurationSeconds = 0.5f;
 
         // Frame-level cache: avoids repeated reflection + GetComponent per frame
-        private int _resolvedFrame = -1;
-        private Transform _resolvedTransform;
-        private UnityEngine.Camera _resolvedCamera;
+        private readonly PerFrameCache<UnityEngine.Camera> _gameplayCamera =
+            new PerFrameCache<UnityEngine.Camera>(PlayerReflection.GetMainCamera);
 
         // Position offset is stored here and applied by HeadMotionPatch postfix,
         // which fires after HeadMotion.LateUpdate writes its final localPosition.
@@ -74,22 +74,10 @@ namespace HeadTracking.Camera
         public float LastTrackingRoll => _lastTrackingRoll;
 
         /// <summary>
-        /// The game camera pitch (from mouse) before head tracking is applied, in ±180° range.
+        /// Gets the resolved gameplay camera (Player.instance.mainCamera, accounts for zoom FOV).
+        /// Returns null if not available. Cached per frame.
         /// </summary>
-        public float GameCameraPitch { get; private set; }
-
-        /// <summary>
-        /// Gets the gameplay camera's current FOV (accounts for zoom).
-        /// Returns null if camera is not available.
-        /// </summary>
-        public float? GameplayCameraFov
-        {
-            get
-            {
-                ResolveGameplayCamera();
-                return _resolvedCamera?.fieldOfView;
-            }
-        }
+        public UnityEngine.Camera GameplayCamera => _gameplayCamera.Get();
 
         public CameraController(
             OpenTrackReceiver receiver, TrackingProcessor processor, PoseInterpolator interpolator,
@@ -263,7 +251,7 @@ namespace HeadTracking.Camera
             _interpolator.Reset();
             _positionProcessor.ResetSmoothing();
             _positionInterpolator.Reset();
-            _resolvedFrame = -1;
+            _gameplayCamera.Invalidate();
         }
 
         /// <summary>
@@ -272,27 +260,8 @@ namespace HeadTracking.Camera
         /// </summary>
         private Transform GetGameplayCameraTransform()
         {
-            ResolveGameplayCamera();
-            return _resolvedTransform;
-        }
-
-        /// <summary>
-        /// Resolves Player.instance.mainCamera via reflection, cached per frame.
-        /// Populates _resolvedTransform and _resolvedCamera.
-        /// </summary>
-        private void ResolveGameplayCamera()
-        {
-            int frame = Time.frameCount;
-            if (_resolvedFrame == frame)
-            {
-                return;
-            }
-            _resolvedFrame = frame;
-            _resolvedTransform = null;
-            _resolvedCamera = null;
-
-            _resolvedCamera = PlayerReflection.GetMainCamera();
-            _resolvedTransform = _resolvedCamera?.transform;
+            var cam = _gameplayCamera.Get();
+            return cam != null ? cam.transform : null;
         }
 
         /// <summary>
@@ -331,10 +300,6 @@ namespace HeadTracking.Camera
 
             // Get current local rotation (this has the game's pitch from cameraMouseLook)
             var currentLocal = cameraTransform.localEulerAngles;
-
-            // Capture game camera pitch in ±180° range for reticle offset calculation
-            float gamePitchRaw = currentLocal.x;
-            GameCameraPitch = gamePitchRaw > 180f ? gamePitchRaw - 360f : gamePitchRaw;
 
             // Get raw tracking data, interpolate between samples, then process
             var rawPose = _receiver.GetLatestPose();

@@ -1,4 +1,5 @@
 using System;
+using CameraUnlock.Core.Unity.Extensions;
 using HeadTracking.Config;
 using UnityEngine;
 
@@ -65,30 +66,22 @@ namespace HeadTracking.Core
         /// </summary>
         public void CheckInput()
         {
-            bool ctrlShift =
-                (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) &&
-                (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
-
-            if (Input.GetKeyDown(_config.RecenterKey.Value) ||
-                (ctrlShift && Input.GetKeyDown(KeyCode.T)))
+            if (ChordHotkeys.IsActionPressed(_config.RecenterKey.Value, ChordHotkeys.RecenterLetter))
             {
                 OnRecenterPressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(_config.ToggleKey.Value) ||
-                (ctrlShift && Input.GetKeyDown(KeyCode.Y)))
+            if (ChordHotkeys.IsActionPressed(_config.ToggleKey.Value, ChordHotkeys.ToggleLetter))
             {
                 OnTogglePressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(_config.CycleTrackingModeKey.Value) ||
-                (ctrlShift && Input.GetKeyDown(KeyCode.G)))
+            if (ChordHotkeys.IsActionPressed(_config.CycleTrackingModeKey.Value, ChordHotkeys.PositionLetter))
             {
                 OnCycleTrackingModePressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(_config.ToggleReticleKey.Value) ||
-                (ctrlShift && Input.GetKeyDown(KeyCode.H)))
+            if (ChordHotkeys.IsActionPressed(_config.ToggleReticleKey.Value, ChordHotkeys.FourthToggleLetter))
             {
                 OnToggleReticlePressed?.Invoke();
             }
