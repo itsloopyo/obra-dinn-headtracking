@@ -21,7 +21,10 @@
 #>
 param(
     [Parameter(Position=0)]
-    [string]$Version = ""
+    [string]$Version = "",
+    # Ship a release even when there are no user-facing commits since the
+    # last tag (writes a maintenance changelog entry instead of aborting).
+    [switch]$Force
 )
 
 Set-StrictMode -Version Latest
@@ -32,6 +35,22 @@ $projectDir = Split-Path -Parent $scriptDir
 $csprojPath = Join-Path $projectDir "src\ObraDinnHeadTracking\ObraDinnHeadTracking.csproj"
 
 Import-Module (Join-Path $projectDir "cameraunlock-core\powershell\ReleaseWorkflow.psm1") -Force
+
+# Mirrors New-ChangelogFromCommits' insertion so a -Force maintenance entry
+# lands in the same place with the same shape.
+function Add-MaintenanceChangelogEntry {
+    param([string]$Path, [string]$NewVersion)
+    $date = Get-Date -Format 'yyyy-MM-dd'
+    $entry = "## [$NewVersion] - $date`n`n### Changed`n`n- Maintenance release (no user-facing changes).`n`n"
+    $changelog = Get-Content $Path -Raw
+    if ($changelog -match '(?s)(# Changelog.*?)(## \[)') {
+        $changelog = $changelog -replace '(?s)(# Changelog.*?\n\n)', "`$1$entry"
+    } else {
+        $changelog = $changelog -replace '(?s)(# Changelog.*?\n)', "`$1$entry"
+    }
+    $changelog = $changelog.TrimEnd() + "`n"
+    Set-Content $Path $changelog -NoNewline
+}
 
 Write-Host "=== Obra Dinn Head Tracking Release ===" -ForegroundColor Cyan
 Write-Host ""
@@ -95,11 +114,52 @@ Write-Host "  3. Commit all changes" -ForegroundColor White
 Write-Host "  4. Create tag $tagName and push (triggers release workflow)" -ForegroundColor White
 Write-Host ""
 
-# Step 1: Update version in csproj
+# Step 1: Generate CHANGELOG from commits since last tag. This is the gate
+# that aborts when there are no user-facing commits, so run it BEFORE
+# mutating any version files or building - a failure here then leaves a
+# clean tree instead of stranding a half-applied version bump with no tag.
+Write-Host "Generating CHANGELOG from commits..." -ForegroundColor Cyan
+$changelogPath = Join-Path $projectDir "CHANGELOG.md"
+$hasExistingTags = git tag -l 2>$null
+if (-not $hasExistingTags) {
+    # First release - write a basic changelog entry
+    $date = Get-Date -Format 'yyyy-MM-dd'
+    $firstEntry = "# Changelog`n`n## [$Version] - $date`n`nFirst release.`n"
+    Set-Content $changelogPath $firstEntry
+    Write-Host "  First release - wrote initial CHANGELOG entry" -ForegroundColor Gray
+} else {
+    try {
+        $changelogArgs = @{
+            ChangelogPath = $changelogPath
+            Version = $Version
+            ArtifactPaths = @(
+                "src/ObraDinnHeadTracking/",
+                "cameraunlock-core",
+                "scripts/",
+                "prebuilt/",
+                "README.md",
+                "CHANGELOG.md",
+                "LICENSE",
+                ".github/"
+            )
+        }
+        New-ChangelogFromCommits @changelogArgs
+    } catch {
+        if (-not $Force) {
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "No user-facing changes to release. Re-run with -Force for a maintenance release." -ForegroundColor Yellow
+            exit 1
+        }
+        Write-Host "No user-facing commits since last tag - writing maintenance entry (-Force)." -ForegroundColor Yellow
+        Add-MaintenanceChangelogEntry -Path $changelogPath -NewVersion $Version
+    }
+}
+
+# Step 2: Update version in csproj
 Write-Host "Updating version to $Version..." -ForegroundColor Cyan
 Set-CsprojVersion $csprojPath $Version
 
-# Step 2: Update version in plugin source
+# Step 2a: Update version in plugin source
 $pluginPath = Join-Path $projectDir "src\ObraDinnHeadTracking\Core\HeadTrackingPlugin.cs"
 $pluginContent = Get-Content $pluginPath -Raw
 $pluginContent = $pluginContent -replace 'PluginVersion = "[^"]+"', "PluginVersion = `"$Version`""
@@ -143,34 +203,6 @@ if (-not (Test-Path $prebuiltDir)) {
 Copy-Item "src/ObraDinnHeadTracking/bin/Release/net35/*.dll" $prebuiltDir -Force
 Write-Host "  Updated prebuilt DLLs" -ForegroundColor Gray
 Pop-Location
-
-# Step 4: Generate CHANGELOG
-Write-Host "Generating CHANGELOG from commits..." -ForegroundColor Cyan
-$changelogPath = Join-Path $projectDir "CHANGELOG.md"
-$hasExistingTags = git tag -l 2>$null
-if (-not $hasExistingTags) {
-    # First release - write a basic changelog entry
-    $date = Get-Date -Format 'yyyy-MM-dd'
-    $firstEntry = "# Changelog`n`n## [$Version] - $date`n`nFirst release.`n"
-    Set-Content $changelogPath $firstEntry
-    Write-Host "  First release - wrote initial CHANGELOG entry" -ForegroundColor Gray
-} else {
-    $changelogArgs = @{
-        ChangelogPath = $changelogPath
-        Version = $Version
-        ArtifactPaths = @(
-            "src/ObraDinnHeadTracking/",
-            "cameraunlock-core",
-            "scripts/",
-            "prebuilt/",
-            "README.md",
-            "CHANGELOG.md",
-            "LICENSE",
-            ".github/"
-        )
-    }
-    New-ChangelogFromCommits @changelogArgs
-}
 
 # Step 5: Commit
 Write-Host "Committing changes..." -ForegroundColor Cyan
