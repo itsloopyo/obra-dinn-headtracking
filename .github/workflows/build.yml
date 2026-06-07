@@ -31,113 +31,37 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Stage BepInEx libs from vendor zip
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+
+      - name: Build and package
+        shell: pwsh
+        run: pixi run package
+
+      - name: Stage installer contents for artifact
         shell: pwsh
         run: |
-          # Use the same zip install.cmd will extract at runtime so the
-          # CI-built DLL references match the runtime BepInEx version
-          # exactly (no 5.4.23.x cross-patch binding surprises).
-          $vendorZip = "vendor/bepinex/BepInEx_win_x86.zip"
-          if (-not (Test-Path $vendorZip)) {
-            Write-Host "::error::Vendored BepInEx zip missing: $vendorZip"
+          $zip = Get-ChildItem release/*-installer.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $zip) {
+            Write-Host "::error::No installer ZIP was produced by 'pixi run package'"
             exit 1
           }
+          $dest = "release/artifact-contents"
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
+          Write-Host "Staged $($zip.Name)" -ForegroundColor Green
 
-          $libsPath = "src/ObraDinnHeadTracking/libs"
-          New-Item -ItemType Directory -Path $libsPath -Force | Out-Null
-          Expand-Archive -Path $vendorZip -DestinationPath bepinex-temp -Force
-          Copy-Item bepinex-temp/BepInEx/core/BepInEx.dll $libsPath/
-          Copy-Item bepinex-temp/BepInEx/core/0Harmony.dll $libsPath/
-          Remove-Item -Recurse bepinex-temp
-
-          Write-Host "BepInEx DLLs staged from $vendorZip" -ForegroundColor Green
-
-      - name: Build Unity stub assemblies
-        shell: pwsh
-        # Same script local devs run via `pixi run setup-libs`, so CI IL
-        # and local IL stay in lockstep. If you change the stub layout,
-        # change it in scripts/build-unity-stubs.ps1, not here.
-        run: scripts/build-unity-stubs.ps1 -LibsPath src/ObraDinnHeadTracking/libs
-
-      - name: Restore NuGet packages
+      - name: Compute artifact name from ref
+        id: artifact
         shell: pwsh
         run: |
-          $unityPath = "${{ github.workspace }}\src\ObraDinnHeadTracking\libs"
-          dotnet restore src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj "-p:UnityEnginePath=$unityPath"
-
-      - name: Build Debug
-        shell: pwsh
-        run: |
-          Write-Host "Building debug configuration..." -ForegroundColor Cyan
-          $unityPath = "${{ github.workspace }}\src\ObraDinnHeadTracking\libs"
-          dotnet build src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj --configuration Debug "-p:UnityEnginePath=$unityPath"
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Debug build failed"
-            exit 1
-          }
-
-          Write-Host "Debug build succeeded" -ForegroundColor Green
-
-      - name: Build Release
-        shell: pwsh
-        run: |
-          Write-Host "Building release configuration..." -ForegroundColor Cyan
-          $unityPath = "${{ github.workspace }}\src\ObraDinnHeadTracking\libs"
-          dotnet build src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj --configuration Release "-p:UnityEnginePath=$unityPath"
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Release build failed"
-            exit 1
-          }
-
-          Write-Host "Release build succeeded" -ForegroundColor Green
-
-      - name: Verify build outputs
-        shell: pwsh
-        run: |
-          Write-Host "Verifying build outputs..." -ForegroundColor Cyan
-
-          $requiredFiles = @(
-            "src/ObraDinnHeadTracking/bin/Debug/net35/ObraDinnHeadTracking.dll",
-            "src/ObraDinnHeadTracking/bin/Release/net35/ObraDinnHeadTracking.dll"
-          )
-
-          $allExist = $true
-          foreach ($file in $requiredFiles) {
-            if (Test-Path $file) {
-              $size = (Get-Item $file).Length / 1KB
-              Write-Host "  $file ($([math]::Round($size, 2)) KB)" -ForegroundColor Green
-            } else {
-              Write-Host "  Missing: $file" -ForegroundColor Red
-              $allExist = $false
-            }
-          }
-
-          if (-not $allExist) {
-            Write-Host "::error::Some build outputs are missing"
-            exit 1
-          }
-
-          Write-Host "All build outputs verified" -ForegroundColor Green
-
-      - name: Package installer
-        shell: pwsh
-        run: |
-          Write-Host "Packaging installer ZIP..." -ForegroundColor Cyan
-          powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Packaging failed"
-            exit 1
-          }
-
-          Write-Host "Package created" -ForegroundColor Green
+          $branch = "${{ github.ref_name }}" -replace '[^A-Za-z0-9._-]', '-'
+          echo "name=ObraDinnHeadTracking-$branch" >> $env:GITHUB_OUTPUT
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ObraDinnHeadTracking-installer
-          path: release/*-installer.zip
+          name: ${{ steps.artifact.outputs.name }}
+          path: release/artifact-contents/
           retention-days: 14
           if-no-files-found: error

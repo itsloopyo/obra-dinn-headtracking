@@ -115,6 +115,17 @@ $installCmdContent = $installCmdContent -replace 'set "MOD_VERSION=[^"]+"', "set
 $installCmdContent | Set-Content $installCmdPath -NoNewline
 Write-Host "  Updated install.cmd MOD_VERSION" -ForegroundColor Gray
 
+# Step 2c: Mirror the version into the canonical launcher manifest (csproj is
+# the source of truth; launcher-manifest.json is the launcher-facing mirror).
+$manifestPath = Join-Path $projectDir "launcher-manifest.json"
+if (Test-Path $manifestPath) {
+    $manifestJson = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $manifestJson.mod_info.version = $Version
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($manifestPath, ($manifestJson | ConvertTo-Json -Depth 10), $utf8NoBom)
+    Write-Host "  Updated launcher-manifest.json version" -ForegroundColor Gray
+}
+
 # Step 3: Build and update prebuilt DLLs
 Write-Host "Building release..." -ForegroundColor Cyan
 Push-Location $projectDir
@@ -165,6 +176,8 @@ if (-not $hasExistingTags) {
 Write-Host "Committing changes..." -ForegroundColor Cyan
 git add $csprojPath
 git add $pluginPath
+git add $installCmdPath
+git add $manifestPath
 git add "$projectDir/prebuilt"
 git add $changelogPath
 git commit -m "Release v$Version"
