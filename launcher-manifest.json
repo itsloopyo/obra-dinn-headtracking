@@ -1,35 +1,49 @@
 {
-  "schema_version": 2,
-  "mod_info": {
-    "name": "ObraDinnHeadTracking",
-    "version": "1.1.1",
-    "game_id": "obra-dinn"
-  },
-  "strategy": "BepInEx5",
-  "delivery_mode": "manifest",
+    "schema_version":  2,
+    "mod_info":  {
+                     "name":  "ObraDinnHeadTracking",
+                     "version":  "1.1.2",
+                     "game_id":  "obra-dinn"
+                 },
+    "strategy":  "BepInEx5",
+    "delivery_mode":  "manifest",
+    "loader":  {
+                   "archives":  [
+                                    {
+                                        "source":  "vendor/bepinex/BepInEx_win_x86.zip",
+                                        "dest":  "",
+                                        "flatten":  null
+                                    }
+                                ],
+                   "detect":  [
+                                  "BepInEx/core/BepInEx.dll",
+                                  "BepInEx/core/BepInEx.Core.dll"
+                              ],
+                   "seed":  [
+                                {
+                                    "target":  "BepInEx/config/BepInEx.cfg",
+                                    "content_b64":  "W0xvZ2dpbmcuQ29uc29sZV0NCkVuYWJsZWQgPSB0cnVlDQoNCltMb2dnaW5nLkRpc2tdDQpFbmFibGVkID0gdHJ1ZQ0K"
+                                }
+                            ]
+               },
+    "files":  [
+                  {
+                      "source":  "plugins/ObraDinnHeadTracking.dll",
+                      "target":  "BepInEx/plugins/ObraDinnHeadTracking.dll"
+                  },
+                  {
+                      "source":  "plugins/CameraUnlock.Core.dll",
+                      "target":  "BepInEx/plugins/CameraUnlock.Core.dll"
+                  },
+                  {
+                      "source":  "plugins/CameraUnlock.Core.Unity.dll",
+                      "target":  "BepInEx/plugins/CameraUnlock.Core.Unity.dll"
+                  }
+              ],
+    "runtime_requirements":  [
 
-  "loader": {
-    "archives": [
-      { "source": "vendor/bepinex/BepInEx_win_x86.zip", "dest": "", "flatten": null }
-    ],
-    "detect": [
-      "BepInEx/core/BepInEx.dll",
-      "BepInEx/core/BepInEx.Core.dll"
-    ],
-    "seed": [
-      {
-        "target": "BepInEx/config/BepInEx.cfg",
-        "content_b64": "W0xvZ2dpbmcuQ29uc29sZV0NCkVuYWJsZWQgPSB0cnVlDQoNCltMb2dnaW5nLkRpc2tdDQpFbmFibGVkID0gdHJ1ZQ0K"
-      }
-    ]
-  },
+                             ],
+    "dependencies":  [
 
-  "files": [
-    { "source": "plugins/ObraDinnHeadTracking.dll", "target": "BepInEx/plugins/ObraDinnHeadTracking.dll" },
-    { "source": "plugins/CameraUnlock.Core.dll", "target": "BepInEx/plugins/CameraUnlock.Core.dll" },
-    { "source": "plugins/CameraUnlock.Core.Unity.dll", "target": "BepInEx/plugins/CameraUnlock.Core.Unity.dll" }
-  ],
-
-  "runtime_requirements": [],
-  "dependencies": []
+                     ]
 }
