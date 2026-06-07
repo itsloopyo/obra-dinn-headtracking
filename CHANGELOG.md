@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.3] - 2026-06-07
+
+### Added
+
+- guard the .original backup against patched assemblies
+
+### Fixed
+
+- subscribe Camera.onPreCull via reflection for SRP-only Unity 6
+- expose Camera render callbacks as fields not events in UnityStubs
+
 ## [1.1.2] - 2026-06-07
 
 ### Added
