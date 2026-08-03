@@ -188,6 +188,10 @@ namespace HeadTracking.Core
 
         private void Update()
         {
+            if (_receiver.TryConsumeRecenterRequest())
+            {
+                HandleRecenter();
+            }
             _inputHandler.CheckInput();
             _gameStateDetector.Update();
             _notificationUI.Update();
