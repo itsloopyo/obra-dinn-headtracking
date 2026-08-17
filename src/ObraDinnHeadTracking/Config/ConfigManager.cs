@@ -31,7 +31,8 @@ namespace HeadTracking.Config
         public ConfigEntry<float> RollSensitivity { get; private set; }
 
         // Smoothing settings
-        public ConfigEntry<float> Smoothing { get; private set; }
+        public ConfigEntry<float> LocalSmoothing { get; private set; }
+        public ConfigEntry<float> RemoteSmoothing { get; private set; }
 
         // Position settings
         public ConfigEntry<bool> PositionEnabled { get; private set; }
@@ -42,7 +43,6 @@ namespace HeadTracking.Config
         public ConfigEntry<float> PositionLimitY { get; private set; }
         public ConfigEntry<float> PositionLimitZ { get; private set; }
         public ConfigEntry<float> PositionLimitZBack { get; private set; }
-        public ConfigEntry<float> PositionSmoothing { get; private set; }
 
         // Pivot compensation
         public ConfigEntry<float> TrackerPivotForward { get; private set; }
@@ -161,15 +161,24 @@ namespace HeadTracking.Config
             );
 
             // Smoothing section
-            Smoothing = config.Bind(
+            LocalSmoothing = config.Bind(
                 "Smoothing",
-                "Smoothing",
+                "LocalSmoothing",
                 0.0f,
                 new ConfigDescription(
-                    "Smoothing level (0 = responsive, 1 = heavy smoothing). " +
-                    "Frame interpolation is always applied to fill frames between tracker samples. " +
-                    "Higher values add additional jitter filtering at the cost of latency. " +
-                    "Remote connections automatically use a minimum of 0.1 for network latency compensation.",
+                    "Smoothing applied when the tracker runs on this machine (loopback). " +
+                    "0 = no smoothing, 1 = heavy. Covers rotation and position.",
+                    new AcceptableValueRange<float>(0f, 1f)
+                )
+            );
+
+            RemoteSmoothing = config.Bind(
+                "Smoothing",
+                "RemoteSmoothing",
+                0.15f,
+                new ConfigDescription(
+                    "Smoothing applied when the tracker is a remote device on the network. " +
+                    "0 = no smoothing, 1 = heavy. Covers rotation and position.",
                     new AcceptableValueRange<float>(0f, 1f)
                 )
             );
@@ -249,16 +258,6 @@ namespace HeadTracking.Config
                 new ConfigDescription(
                     "Maximum backward depth displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
-                )
-            );
-
-            PositionSmoothing = config.Bind(
-                "Position",
-                "PositionSmoothing",
-                0.15f,
-                new ConfigDescription(
-                    "Smoothing for positional tracking (0 = instant, 1 = very slow)",
-                    new AcceptableValueRange<float>(0f, 1f)
                 )
             );
 

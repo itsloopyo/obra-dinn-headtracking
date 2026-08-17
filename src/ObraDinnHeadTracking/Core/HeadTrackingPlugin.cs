@@ -98,7 +98,8 @@ namespace HeadTracking.Core
             _receiver = new OpenTrackReceiver();
             _processor = new TrackingProcessor
             {
-                SmoothingFactor = _config.Smoothing.Value,
+                LocalSmoothing = _config.LocalSmoothing.Value,
+                RemoteSmoothing = _config.RemoteSmoothing.Value,
                 Sensitivity = new SensitivitySettings(
                     _config.YawSensitivity.Value,
                     _config.PitchSensitivity.Value,
@@ -112,7 +113,7 @@ namespace HeadTracking.Core
             _interpolator = new PoseInterpolator();
             _positionProcessor = new PositionProcessor
             {
-                Settings = new PositionSettings(
+                Settings = PositionSettings.Symmetric(
                     _config.PositionSensitivityX.Value,
                     _config.PositionSensitivityY.Value,
                     _config.PositionSensitivityZ.Value,
@@ -120,7 +121,8 @@ namespace HeadTracking.Core
                     _config.PositionLimitY.Value,
                     _config.PositionLimitZ.Value,
                     _config.PositionLimitZBack.Value,
-                    _config.PositionSmoothing.Value,
+                    localSmoothing: _config.LocalSmoothing.Value,
+                    remoteSmoothing: _config.RemoteSmoothing.Value,
                     invertX: true, invertY: false, invertZ: true
                 ),
                 TrackerPivotForward = _config.TrackerPivotForward.Value

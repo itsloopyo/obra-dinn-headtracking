@@ -315,6 +315,13 @@ namespace HeadTracking.Camera
             // Get current local rotation (this has the game's pitch from cameraMouseLook)
             var currentLocal = cameraTransform.localEulerAngles;
 
+            // Connection locality picks LocalSmoothing vs RemoteSmoothing. Read it every
+            // frame so switching between a local tracker and a phone on WiFi takes effect
+            // without restarting the game.
+            bool isRemoteConnection = _receiver.IsRemoteConnection;
+            _processor.IsRemoteConnection = isRemoteConnection;
+            _positionProcessor.IsRemoteConnection = isRemoteConnection;
+
             // Get raw tracking data, interpolate between samples, then process
             var rawPose = _receiver.GetLatestPose();
             var interpolated = _interpolator.Update(rawPose, Time.deltaTime);
