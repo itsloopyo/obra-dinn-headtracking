@@ -80,43 +80,74 @@ Two equivalent binding sets - use whichever your keyboard has:
 
 The mod creates a config file at `BepInEx/config/com.headtracking.obradinn.cfg` on first run. Edit it to customize:
 
+A comment has to sit on its own line. BepInEx splits each line at the first `=`
+and takes everything after it as the value, so a trailing `# note` becomes part
+of the value, the conversion fails, and the entry silently keeps its default -
+the only trace is a line in `BepInEx/LogOutput.log`. Put explanations above the
+key, never after it.
+
 ```ini
 [General]
-EnabledOnStartup = true          # Start with tracking enabled
-ShowStartupNotification = true   # Show controls on startup
-UnlockFramerate = true           # Remove 60 FPS cap
+# Start with tracking enabled
+EnabledOnStartup = true
+# Show controls on startup
+ShowStartupNotification = true
+# Remove 60 FPS cap
+UnlockFramerate = true
 
 [UI]
 ShowConnectionNotifications = true
-ShowReticle = true               # Aim reticle during gameplay
+# Aim reticle during gameplay
+ShowReticle = true
 
 [Keybindings]
-RecenterKey = Home               # Also Ctrl+Shift+T
-ToggleKey = End                  # Also Ctrl+Shift+Y
-CycleTrackingModeKey = PageUp    # Also Ctrl+Shift+G
-ToggleReticleKey = PageDown      # Also Ctrl+Shift+H
+# Also Ctrl+Shift+T
+RecenterKey = Home
+# Also Ctrl+Shift+Y
+ToggleKey = End
+# Also Ctrl+Shift+G
+CycleTrackingModeKey = PageUp
+# Also Ctrl+Shift+H
+ToggleReticleKey = PageDown
 
 [Network]
-UDPPort = 4242                   # Must match OpenTrack output port
+# Must match OpenTrack output port
+UDPPort = 4242
 
 [Sensitivity]
-YawSensitivity = 1.0             # Horizontal rotation (0.1-3.0)
-PitchSensitivity = 1.0           # Vertical rotation (0.1-3.0)
-RollSensitivity = 1.0            # Head tilt (0.0-3.0)
+# Horizontal rotation (0.1-3.0)
+YawSensitivity = 1.0
+# Vertical rotation (0.1-3.0)
+PitchSensitivity = 1.0
+# Head tilt (0.0-3.0)
+RollSensitivity = 1.0
 
 [Smoothing]
-Smoothing = 0.0                  # 0 = responsive, 1 = heavy (adds latency)
+# Tracker on this machine (loopback), 0 = none, 1 = heavy
+LocalSmoothing = 0.0
+# Tracker on a remote network device, 0 = none, 1 = heavy
+RemoteSmoothing = 0.15
 
 [Position]
-PositionEnabled = true           # Enable lean/positional tracking
-PositionSensitivityX = 2.0      # Lateral sensitivity (0.0-3.0)
-PositionSensitivityY = 2.0      # Vertical sensitivity (0.0-3.0)
-PositionSensitivityZ = 2.0      # Depth sensitivity (0.0-3.0)
-PositionLimitX = 0.30           # Max lateral offset in meters
-PositionLimitY = 0.20           # Max vertical offset in meters
-PositionLimitZ = 0.40           # Max depth offset in meters
-PositionSmoothing = 0.15        # Position smoothing (0.0-1.0)
-TrackerPivotForward = 0.08      # Neck-to-face distance, compensates yaw orbit
+# Enable lean/positional tracking
+PositionEnabled = true
+# Lateral sensitivity (0.0-3.0)
+PositionSensitivityX = 2.0
+# Vertical sensitivity (0.0-3.0)
+PositionSensitivityY = 2.0
+# Depth sensitivity (0.0-3.0)
+PositionSensitivityZ = 2.0
+# Max lateral offset in meters
+PositionLimitX = 0.30
+# Max vertical offset in meters
+PositionLimitY = 0.20
+# Max forward lean in meters (0.01-0.5)
+PositionLimitZ = 0.40
+# Max backward lean in meters (0.01-0.5). Separate from PositionLimitZ and
+# much tighter by default, to stop the camera clipping through the player
+PositionLimitZBack = 0.10
+# Neck-to-face distance, compensates yaw orbit
+TrackerPivotForward = 0.08
 ```
 
 ## Troubleshooting
@@ -131,6 +162,9 @@ TrackerPivotForward = 0.08      # Neck-to-face distance, compensates yaw orbit
 - Check UDP port matches (default 4242)
 - Press **End** to enable tracking, **Home** to recenter
 - Check firewall isn't blocking UDP port 4242
+
+**A config edit had no effect:**
+- Make sure nothing follows the value on the line. A trailing `# comment` is read as part of the value, the entry falls back to its default, and the game gives no sign of it. `BepInEx/LogOutput.log` records the failed conversion.
 
 **"Player type not found" error:**
 - Game version mismatch. The mod may need an update for newer game versions.
