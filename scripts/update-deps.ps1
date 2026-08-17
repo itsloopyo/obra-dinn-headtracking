@@ -20,7 +20,7 @@ if (-not (Test-Path $module)) {
 Import-Module $module -Force
 
 $out = Join-Path $projectDir 'vendor/bepinex'
-Refresh-VendoredLoader `
+Update-VendoredLoader `
     -Name 'bepinex' `
     -OutputDir $out `
     -OutputFileName 'BepInEx_win_x86.zip' `
