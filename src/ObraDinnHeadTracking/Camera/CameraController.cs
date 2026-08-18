@@ -117,9 +117,12 @@ namespace HeadTracking.Camera
                 return;
             }
 
+            // Negative z is the forward lean throughout the pipeline and the asymmetric
+            // clamp is built on that; Unity's transform +z is forward, so the flip belongs
+            // here rather than in InvertZ, which inverts ahead of the clamp.
             var gamePos = cameraTransform.localPosition;
             cameraTransform.localPosition = gamePos + new Vector3(
-                _pendingPositionOffset.X, _pendingPositionOffset.Y, _pendingPositionOffset.Z);
+                _pendingPositionOffset.X, _pendingPositionOffset.Y, -_pendingPositionOffset.Z);
 
             _hasPendingPosition = false;
         }

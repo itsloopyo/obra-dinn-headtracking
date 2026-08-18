@@ -123,7 +123,7 @@ namespace HeadTracking.Core
                     _config.PositionLimitZBack.Value,
                     localSmoothing: _config.LocalSmoothing.Value,
                     remoteSmoothing: _config.RemoteSmoothing.Value,
-                    invertX: true, invertY: false, invertZ: true
+                    invertX: true, invertY: false, invertZ: false
                 ),
                 TrackerPivotForward = _config.TrackerPivotForward.Value
             };
