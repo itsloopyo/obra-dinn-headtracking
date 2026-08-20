@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0] - 2026-08-20
+
+### Fixed
+
+- give the forward lean its own travel budget again
+- remove mod-side centring, log connection changes unconditionally
+- harden the release pin sync and announce steps
+
 ## [1.2.1] - 2026-08-18
 
 ### Fixed
