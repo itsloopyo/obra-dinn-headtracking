@@ -15,7 +15,6 @@ namespace HeadTracking.Config
 
         // Keybinding settings
         public ConfigEntry<KeyCode> ToggleKey { get; private set; }
-        public ConfigEntry<KeyCode> RecenterKey { get; private set; }
         public ConfigEntry<KeyCode> ToggleReticleKey { get; private set; }
         public ConfigEntry<KeyCode> CycleTrackingModeKey { get; private set; }
         // UI settings
@@ -95,13 +94,6 @@ namespace HeadTracking.Config
                 "ToggleKey",
                 KeyCode.End,
                 "Key to toggle head tracking on/off (also Ctrl+Shift+Y)"
-            );
-
-            RecenterKey = config.Bind(
-                "Keybindings",
-                "RecenterKey",
-                KeyCode.Home,
-                "Key to recenter head tracking, resets offset to current head position (also Ctrl+Shift+T)"
             );
 
             ToggleReticleKey = config.Bind(

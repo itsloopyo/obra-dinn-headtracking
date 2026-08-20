@@ -29,7 +29,7 @@ namespace HeadTracking.Patches
             {
                 _patchFailed = true;
                 HeadTrackingPlugin.Instance?.Logger.LogError(
-                    "HeadMotion type not found — positional tracking will not work");
+                    "HeadMotion type not found - positional tracking will not work");
                 return;
             }
 
@@ -38,7 +38,7 @@ namespace HeadTracking.Patches
             {
                 _patchFailed = true;
                 HeadTrackingPlugin.Instance?.Logger.LogError(
-                    "HeadMotion.LateUpdate method not found — positional tracking will not work");
+                    "HeadMotion.LateUpdate method not found - positional tracking will not work");
                 return;
             }
 
@@ -48,7 +48,7 @@ namespace HeadTracking.Patches
 
             _patchApplied = true;
             HeadTrackingPlugin.Instance?.Logger.LogInfo(
-                "HeadMotion.LateUpdate patch applied — positional tracking enabled");
+                "HeadMotion.LateUpdate patch applied - positional tracking enabled");
         }
 
         /// <summary>

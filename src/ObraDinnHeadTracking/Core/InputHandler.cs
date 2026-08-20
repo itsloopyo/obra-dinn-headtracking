@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HeadTracking.Core
 {
     /// <summary>
-    /// Handles configurable keyboard input for toggle and recenter actions.
+    /// Handles configurable keyboard input for the mod's hotkey actions.
     /// Each action has a configurable nav-cluster key plus a fixed Ctrl+Shift+letter
     /// chord, drawn from the T/Y/U/G/H/J cluster so keyboards without a nav block
     /// still work.
@@ -19,11 +19,6 @@ namespace HeadTracking.Core
         /// Fired when toggle key is pressed.
         /// </summary>
         public event Action OnTogglePressed;
-
-        /// <summary>
-        /// Fired when recenter key is pressed.
-        /// </summary>
-        public event Action OnRecenterPressed;
 
         /// <summary>
         /// Fired when toggle reticle key is pressed.
@@ -40,11 +35,6 @@ namespace HeadTracking.Core
         /// The currently configured toggle key.
         /// </summary>
         public KeyCode ToggleKey => _config.ToggleKey.Value;
-
-        /// <summary>
-        /// The currently configured recenter key.
-        /// </summary>
-        public KeyCode RecenterKey => _config.RecenterKey.Value;
 
         /// <summary>
         /// The currently configured toggle reticle key.
@@ -66,11 +56,6 @@ namespace HeadTracking.Core
         /// </summary>
         public void CheckInput()
         {
-            if (ChordHotkeys.IsActionPressed(_config.RecenterKey.Value, ChordHotkeys.RecenterLetter))
-            {
-                OnRecenterPressed?.Invoke();
-            }
-
             if (ChordHotkeys.IsActionPressed(_config.ToggleKey.Value, ChordHotkeys.ToggleLetter))
             {
                 OnTogglePressed?.Invoke();

@@ -154,7 +154,6 @@ namespace HeadTracking.Core
 
             // Subscribe to input events
             _inputHandler.OnTogglePressed += HandleToggle;
-            _inputHandler.OnRecenterPressed += HandleRecenter;
             _inputHandler.OnToggleReticlePressed += HandleToggleReticle;
             _inputHandler.OnCycleTrackingModePressed += HandleCycleTrackingMode;
 
@@ -182,7 +181,7 @@ namespace HeadTracking.Core
             // Show startup notification if enabled
             if (_config.ShowStartupNotification.Value)
             {
-                string keyInfo = $"[{_inputHandler.RecenterKey}] Recenter, [{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.CycleTrackingModeKey}] Cycle Mode, [{_inputHandler.ToggleReticleKey}] Reticle";
+                string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.CycleTrackingModeKey}] Cycle Mode, [{_inputHandler.ToggleReticleKey}] Reticle";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{statusInfo}\n{keyInfo}", 4f);
             }
@@ -190,10 +189,6 @@ namespace HeadTracking.Core
 
         private void Update()
         {
-            if (_receiver.TryConsumeRecenterRequest())
-            {
-                HandleRecenter();
-            }
             _inputHandler.CheckInput();
             _gameStateDetector.Update();
             _notificationUI.Update();
@@ -211,18 +206,17 @@ namespace HeadTracking.Core
 
             if (isReceiving != _wasReceiving)
             {
+                // The log line is deliberately outside the notification gate: it is the
+                // only evidence in the log that tracker packets ever arrived, and a
+                // bug report must not depend on a cosmetic on-screen setting.
+                Logger.LogInfo(isReceiving ? "OpenTrack connection established" : "OpenTrack connection lost");
+
                 if (_config.ShowConnectionNotifications.Value)
                 {
                     if (isReceiving)
-                    {
                         _notificationUI.ShowConnectionEstablished();
-                        Logger.LogInfo("OpenTrack connection established");
-                    }
                     else
-                    {
                         _notificationUI.ShowConnectionLost();
-                        Logger.LogInfo("OpenTrack connection lost");
-                    }
                 }
                 _wasReceiving = isReceiving;
             }
@@ -245,7 +239,6 @@ namespace HeadTracking.Core
 
             // Unsubscribe from events
             _inputHandler.OnTogglePressed -= HandleToggle;
-            _inputHandler.OnRecenterPressed -= HandleRecenter;
             _inputHandler.OnToggleReticlePressed -= HandleToggleReticle;
             _inputHandler.OnCycleTrackingModePressed -= HandleCycleTrackingMode;
             _gameStateDetector.StateChanged -= OnGameStateChanged;
@@ -279,17 +272,6 @@ namespace HeadTracking.Core
                 _notificationUI.ShowTrackingDisabled();
                 Logger.LogInfo("Head tracking disabled");
             }
-        }
-
-        private void HandleRecenter()
-        {
-            var rawPose = _receiver.GetLatestPose();
-            _processor.RecenterTo(rawPose);
-            _interpolator.Reset();
-            _positionProcessor.SetCenter(_receiver.GetLatestPosition());
-            _positionInterpolator.Reset();
-            _notificationUI.ShowRecentered();
-            Logger.LogInfo("Head tracking recentered");
         }
 
         private void HandleToggleReticle()
@@ -336,7 +318,7 @@ namespace HeadTracking.Core
         /// <summary>
         /// Calculates the screen offset for the aim reticle based on current head tracking rotation.
         /// The reticle shows where you're aiming (mouse direction) vs where you're looking (head direction).
-        /// With camera-local composition, gamePitch cancels out — the offset depends only on
+        /// With camera-local composition, gamePitch cancels out - the offset depends only on
         /// the head tracking rotation.
         /// </summary>
         private UnityEngine.Vector2 CalculateAimOffset()

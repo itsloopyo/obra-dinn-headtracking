@@ -40,13 +40,13 @@ The installer automatically finds your game via Steam registry lookup. If it can
 
 ### Webcam Setup
 
-No special hardware needed — OpenTrack's built-in **neuralnet tracker** uses any webcam for 6DOF face tracking.
+No special hardware needed - OpenTrack's built-in **neuralnet tracker** uses any webcam for 6DOF face tracking.
 
 1. In OpenTrack, set the input to **neuralnet tracker**
 2. Select your webcam in the tracker settings
 3. Set output to **UDP over network** (`127.0.0.1:4242`)
 4. Start tracking before launching the game
-5. Recenter in OpenTrack via its hotkey, and press **Home** in-game to recenter the mod as needed
+5. Centre your view in OpenTrack with its Center hotkey. The mod applies whatever the tracker sends, so the tracker owns the centre
 
 ### Phone App Setup
 
@@ -64,7 +64,6 @@ Two equivalent binding sets - use whichever your keyboard has:
 
 | Action              | Nav-cluster | Chord           |
 |---------------------|-------------|-----------------|
-| Recenter            | `Home`      | `Ctrl+Shift+T`  |
 | Toggle tracking     | `End`       | `Ctrl+Shift+Y`  |
 | Cycle tracking mode | `Page Up`   | `Ctrl+Shift+G`  |
 | Toggle reticle      | `Page Down` | `Ctrl+Shift+H`  |
@@ -101,8 +100,6 @@ ShowConnectionNotifications = true
 ShowReticle = true
 
 [Keybindings]
-# Also Ctrl+Shift+T
-RecenterKey = Home
 # Also Ctrl+Shift+Y
 ToggleKey = End
 # Also Ctrl+Shift+G
@@ -160,8 +157,11 @@ TrackerPivotForward = 0.08
 **No tracking response:**
 - Verify OpenTrack is running and outputting data
 - Check UDP port matches (default 4242)
-- Press **End** to enable tracking, **Home** to recenter
+- Press **End** to enable tracking
 - Check firewall isn't blocking UDP port 4242
+
+**View is off-centre:**
+- Centre it in your tracker app. The mod keeps no centre of its own and applies the tracker pose as sent, so use OpenTrack's Center hotkey (or your phone app's CENTER button) while looking straight ahead.
 
 **A config edit had no effect:**
 - Make sure nothing follows the value on the line. A trailing `# comment` is read as part of the value, the entry falls back to its default, and the game gives no sign of it. `BepInEx/LogOutput.log` records the failed conversion.

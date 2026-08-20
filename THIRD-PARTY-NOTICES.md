@@ -1,7 +1,7 @@
 # Third-Party Notices
 
 This project depends on the following third-party software. None of these are
-redistributed in the release package — they are either downloaded at install
+redistributed in the release package - they are either downloaded at install
 time or used only at build/runtime.
 
 ---

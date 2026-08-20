@@ -32,13 +32,6 @@ namespace HeadTracking.Camera
         private bool _isTransitioningOut;
         private float _transitionProgress;
 
-        // Auto-recenter arming: armed at startup, on camera change (scene
-        // transition) and on toggle re-enable — never when tracking data merely
-        // resumes after a loss gap, where the user may not be facing the screen.
-        // The tracker app owns re-acquisition recentering (packet trailer signal).
-        private bool _recenterArmed = true;
-        private bool _stabilizationRecenterPending;
-
         // Transition-in state (for smooth resume after prop interactions or other interruptions)
         private bool _isTransitioningIn;
         private float _transitionInProgress;
@@ -110,7 +103,7 @@ namespace HeadTracking.Camera
             }
 
             // Apply to the gameplay camera transform (same one we apply rotation to),
-            // NOT HeadMotion's transform — HeadMotion may not be in the camera's hierarchy.
+            // NOT HeadMotion's transform - HeadMotion may not be in the camera's hierarchy.
             var cameraTransform = GetGameplayCameraTransform();
             if (cameraTransform == null)
             {
@@ -147,7 +140,6 @@ namespace HeadTracking.Camera
                 _camera = cam;
                 _isTransitioningOut = false;
                 _wasApplyingTracking = false;
-                _recenterArmed = true;
             }
 
             if (enabled && _receiver.IsReceiving)
@@ -157,15 +149,6 @@ namespace HeadTracking.Camera
                 // Detect transition from not-tracking to tracking
                 if (!_wasApplyingTracking)
                 {
-                    if (_recenterArmed)
-                    {
-                        _recenterArmed = false;
-                        _stabilizationRecenterPending = true;
-                        var rawPose = _receiver.GetLatestPose();
-                        _processor.RecenterTo(rawPose);
-                        _positionProcessor.SetCenter(_receiver.GetLatestPosition());
-                    }
-
                     // Starting to track - begin transition in
                     _isTransitioningIn = true;
                     _transitionInProgress = 0f;
@@ -185,17 +168,6 @@ namespace HeadTracking.Camera
                     {
                         _transitionInProgress = 1f;
                         _isTransitioningIn = false;
-
-                        // Re-recenter with stabilized tracker values.
-                        // Initial auto-recenter may capture unstabilized face tracker data
-                        // (warm-up Y drift). After 0.5s the tracker has settled.
-                        if (_stabilizationRecenterPending && _receiver.IsReceiving)
-                        {
-                            _stabilizationRecenterPending = false;
-                            var rawPose = _receiver.GetLatestPose();
-                            _processor.RecenterTo(rawPose);
-                            _positionProcessor.SetCenter(_receiver.GetLatestPosition());
-                        }
                     }
                     // Smooth ease-in curve
                     trackingScale = _transitionInProgress * _transitionInProgress;
@@ -231,7 +203,6 @@ namespace HeadTracking.Camera
             _positionProcessor.ResetSmoothing();
             _positionInterpolator.Reset();
             _isTransitioningOut = false;
-            _recenterArmed = true;
             // Don't reset tracking values - allows smooth re-enable if head hasn't moved
         }
 
@@ -370,7 +341,7 @@ namespace HeadTracking.Camera
             }
 
             {
-                // Scale position by transition factor — don't apply directly,
+                // Scale position by transition factor - don't apply directly,
                 // store for onPreCull which fires after all game LateUpdates
                 Vec3 scaledPos = finalPos * scale;
                 _pendingPositionOffset = scaledPos;

@@ -13,7 +13,7 @@ namespace HeadTracking.Patches
         private static bool _patchApplied;
         private static bool _patchFailed;
 
-        // Internalized state — only used within the postfix
+        // Internalized state - only used within the postfix
         private static float _pureAimYaw;
         private static bool _pureAimInitialized;
         private static MonoBehaviour _targetInstance;

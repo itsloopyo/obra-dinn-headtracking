@@ -15,7 +15,7 @@ set "FRAMEWORK_TYPE=BepInEx"
 set "BEPINEX_ARCH=x86"
 set "BEPINEX_VENDOR_ZIP_NAME="
 set "BEPINEX_SUBFOLDER="
-set "MOD_CONTROLS=Controls:&echo   Home - Recenter head tracking&echo   End  - Toggle head tracking on/off"
+set "MOD_CONTROLS=Controls:&echo   End - Toggle head tracking on/off"
 :: --- END CONFIG BLOCK ---
 
 set "WRAPPER_DIR=%~dp0"

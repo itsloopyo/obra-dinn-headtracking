@@ -9,8 +9,20 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Log `OpenTrack connection established` / `lost` regardless of the on-screen
+  notification setting. It is the only evidence in `BepInEx/LogOutput.log` that
+  tracker packets ever arrived, and a user who had turned notifications off sent
+  a log that could not answer "did the tracker reach the game".
+
 ### Changed
 
+- Removed all mod-side centring. The `Home` / `Ctrl+Shift+T` hotkey, the
+  `RecenterKey` config entry and the handling of the tracker's CENTER request are
+  gone, and the mod now applies the tracker pose as absolute. Every tracker
+  centres itself, so a centre in the mod was a second centre in series with the
+  tracker's own and the two drifted apart. Centre your view in your tracker app.
 - Replace the single `Smoothing` config key with `LocalSmoothing` (default 0.0) and `RemoteSmoothing` (default 0.15), selected per connection from the packet source address
 - Remove the `PositionSmoothing` key: position now uses the same connection-selected value as rotation
 - Remove the hidden 0.15 baseline smoothing floor, so local trackers get zero-latency tracking by default
