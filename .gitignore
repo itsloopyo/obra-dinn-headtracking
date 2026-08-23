@@ -35,3 +35,6 @@ mcp.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Committed build output - the release ZIPs are the distribution channel
+prebuilt/

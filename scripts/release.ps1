@@ -87,8 +87,8 @@ if ($currentBranch -ne "main") {
     exit 1
 }
 
-# Check for uncommitted changes (prebuilt/ is excluded since the release overwrites it)
-$status = git status --porcelain -- ':!prebuilt/'
+# Check for uncommitted changes
+$status = git status --porcelain
 if ($status) {
     Write-Host "Error: Working directory has uncommitted changes" -ForegroundColor Red
     Write-Host $status -ForegroundColor Gray
@@ -109,7 +109,7 @@ Write-Host ""
 
 Write-Host "Steps:" -ForegroundColor Yellow
 Write-Host "  1. Update version in csproj and plugin source" -ForegroundColor White
-Write-Host "  2. Build and update prebuilt DLLs" -ForegroundColor White
+Write-Host "  2. Build the release" -ForegroundColor White
 Write-Host "  3. Commit all changes" -ForegroundColor White
 Write-Host "  4. Create tag $tagName and push (triggers release workflow)" -ForegroundColor White
 Write-Host ""
@@ -136,7 +136,6 @@ if (-not $hasExistingTags) {
                 "src/ObraDinnHeadTracking/",
                 "cameraunlock-core",
                 "scripts/",
-                "prebuilt/",
                 "README.md",
                 "CHANGELOG.md",
                 "LICENSE",
@@ -186,7 +185,7 @@ if (Test-Path $manifestPath) {
     Write-Host "  Updated launcher-manifest.json version" -ForegroundColor Gray
 }
 
-# Step 3: Build and update prebuilt DLLs
+# Step 3: Build
 Write-Host "Building release..." -ForegroundColor Cyan
 Push-Location $projectDir
 dotnet build src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj -c Release
@@ -195,13 +194,6 @@ if ($LASTEXITCODE -ne 0) {
     Pop-Location
     exit 1
 }
-
-$prebuiltDir = Join-Path $projectDir "prebuilt"
-if (-not (Test-Path $prebuiltDir)) {
-    New-Item -ItemType Directory -Path $prebuiltDir -Force | Out-Null
-}
-Copy-Item "src/ObraDinnHeadTracking/bin/Release/net35/*.dll" $prebuiltDir -Force
-Write-Host "  Updated prebuilt DLLs" -ForegroundColor Gray
 Pop-Location
 
 # Step 5: Commit
@@ -210,7 +202,6 @@ git add $csprojPath
 git add $pluginPath
 git add $installCmdPath
 git add $manifestPath
-git add "$projectDir/prebuilt"
 git add $changelogPath
 git commit -m "Release v$Version"
 if ($LASTEXITCODE -ne 0) {

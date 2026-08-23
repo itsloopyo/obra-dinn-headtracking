@@ -116,16 +116,17 @@ foreach ($vendorFile in @("BepInEx_win_x86.zip", "LICENSE", "README.md")) {
     Write-Host "  vendor/bepinex/$vendorFile" -ForegroundColor Green
 }
 
-# Copy documentation
+# Copy documentation. The installer ZIP redistributes our binaries and the
+# vendored loader, so a missing licence file is a compliance failure, not a
+# skippable step: throw rather than warn.
 $docFiles = @("README.md", "LICENSE", "CHANGELOG.md", "THIRD-PARTY-NOTICES.md")
 foreach ($doc in $docFiles) {
     $docPath = Join-Path $projectDir $doc
-    if (Test-Path $docPath) {
-        Copy-Item $docPath -Destination $ghStagingDir -Force
-        Write-Host "  $doc" -ForegroundColor Green
-    } elseif ($doc -eq "LICENSE") {
-        Write-Host "  WARNING: $doc not found" -ForegroundColor Yellow
+    if (-not (Test-Path $docPath)) {
+        throw "Required document not found: $doc. Every published ZIP is a binary distribution and must carry it."
     }
+    Copy-Item $docPath -Destination $ghStagingDir -Force
+    Write-Host "  $doc" -ForegroundColor Green
 }
 
 # install.cmd / uninstall.cmd resolve the game via shared/find-game.ps1.
@@ -177,6 +178,17 @@ if (Test-Path $nexusZipPath) { Remove-Item $nexusZipPath -Force }
 Write-Host ""
 Write-Host "Creating Nexus ZIP..." -ForegroundColor Cyan
 
+# The Nexus ZIP is a binary distribution too: the licences of everything
+# compiled into or bundled with the payload require their notices to travel
+# with it, so LICENSE and THIRD-PARTY-NOTICES.md ship at its root.
+foreach ($noticeDoc in @('LICENSE', 'THIRD-PARTY-NOTICES.md', 'README.md')) {
+    $noticeSrc = Join-Path $projectDir $noticeDoc
+    if (-not (Test-Path $noticeSrc)) {
+        throw "Required notice file not found: $noticeDoc. Every published ZIP is a binary distribution and must carry it."
+    }
+    Copy-Item $noticeSrc -Destination $nexusStagingDir -Force
+    Write-Host "  $noticeDoc" -ForegroundColor Green
+}
 Push-Location $nexusStagingDir
 try {
     Compress-Archive -Path ".\*" -DestinationPath $nexusZipPath -Force

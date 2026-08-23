@@ -105,7 +105,6 @@ jobs:
             "src/ObraDinnHeadTracking/",
             "cameraunlock-core",
             "scripts/",
-            "prebuilt/",
             "README.md",
             "CHANGELOG.md",
             "LICENSE",

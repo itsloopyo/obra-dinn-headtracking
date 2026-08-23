@@ -23,8 +23,7 @@ $artifactPaths = @(
     "src/ObraDinnHeadTracking/",
     "cameraunlock-core",
     "scripts/install.cmd",
-    "scripts/uninstall.cmd",
-    "prebuilt/"
+    "scripts/uninstall.cmd"
 )
 
 # Get commits since last tag
