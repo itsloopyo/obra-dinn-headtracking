@@ -15,6 +15,7 @@ stays in the repository and ships in neither ZIP.
 | Component | Version | Licence | How it ships |
 |-----------|---------|---------|--------------|
 | BepInEx | v5.4.23.5 | LGPL-2.1 | Vendored zip, installer ZIP only |
+| UnityDoorstop | 4.5.0 | LGPL-2.1 | Inside the vendored BepInEx zip (`winhttp.dll`) |
 | HarmonyX | 2.9.0 | MIT | Inside the vendored BepInEx zip |
 | Lib.Harmony | upstream of HarmonyX | MIT | Not shipped directly; HarmonyX derives from it |
 | Mono.Cecil | 0.10.4 | MIT | Inside the vendored BepInEx zip |
@@ -528,6 +529,23 @@ USA
 
 Exemptions / alternate licenses are available for negotiation.
 ```
+
+---
+
+## UnityDoorstop
+
+Not a dependency we chose separately: BepInEx ships it inside its release
+archive as `winhttp.dll`, the loader that injects BepInEx into the Unity
+runtime. Our installer extracts that archive unchanged, so we redistribute this
+file and it gets its own attribution.
+
+- Upstream: https://github.com/NeighTools/UnityDoorstop
+- Version: `4.5.0` (from `.doorstop_version` inside the vendored archive)
+- Licence: LGPL-2.1, the same text reproduced under BepInEx above
+
+Unmodified, dynamically loaded, never statically linked. Source for the
+unmodified library is available from the upstream repository above, per
+LGPL-2.1 section 6.
 
 ---
 
