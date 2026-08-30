@@ -1,9 +1,8 @@
 #!/usr/bin/env pwsh
-# Stage build-time references into src/ObraDinnHeadTracking/libs.
-# BepInEx + Harmony come from the committed vendor zip; Unity DLLs are
-# built from the committed UnityStubs.*.cs source files (same stubs CI
-# uses) so local IL matches CI IL exactly. Runs before restore/build
-# via pixi.
+# Stage BepInEx + Harmony into src/ObraDinnHeadTracking/libs from the
+# committed vendor zip. The Unity reference stubs are a separate step:
+# `pixi run setup-libs` runs this first, then compiles them from the
+# shared sources in cameraunlock-core/csharp/stubs.
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = 'SilentlyContinue'
@@ -46,14 +45,4 @@ if ($missingBep.Count -gt 0) {
     }
 }
 
-# Unity stubs: always rebuild from source so they stay in lockstep with
-# the committed UnityStubs.*.cs. Building against the user's installed
-# game's real Unity DLLs would produce IL that diverges from CI's
-# stub-built IL, and that divergence has bitten us in production.
-& (Join-Path $scriptDir "build-unity-stubs.ps1") -LibsPath $libsPath
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Unity stub build failed" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "libs/ ready for build." -ForegroundColor Green
+Write-Host "BepInEx references staged." -ForegroundColor Green

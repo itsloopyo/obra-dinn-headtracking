@@ -20,7 +20,7 @@ stays in the repository and ships in neither ZIP.
 | Lib.Harmony | upstream of HarmonyX | MIT | Not shipped directly; HarmonyX derives from it |
 | Mono.Cecil | 0.10.4 | MIT | Inside the vendored BepInEx zip |
 | MonoMod | 22.01.29.01 | MIT | Inside the vendored BepInEx zip |
-| cameraunlock-core | 1fd2956b1819137f723a552725462ab25c14fa24 | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` in both ZIPs |
+| cameraunlock-core | b107dc64b6bfe43b25d9c2bf867a6d31ce6b07e0 | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` in both ZIPs |
 | OpenTrack | n/a | ISC | Not bundled; UDP protocol interoperability only |
 
 The installer ZIP carries `vendor/bepinex/BepInEx_win_x86.zip` verbatim. That
@@ -558,7 +558,7 @@ code but it carries a different copyright holder from the `LICENSE` at the root
 of this repository, so its licence is reproduced here in full and travels with
 the binaries in every ZIP.
 
-- Pinned commit: `1fd2956b1819137f723a552725462ab25c14fa24`
+- Pinned commit: `b107dc64b6bfe43b25d9c2bf867a6d31ce6b07e0`
 
 ```
 MIT License
@@ -773,4 +773,4 @@ runtime, so it stores no structure offsets, no function addresses and no byte
 patterns, and no decompiled or disassembled game code. The engine and game
 assemblies it compiles against are referenced from the user's own install, or
 from the hand-written signature-only stubs in
-`src/ObraDinnHeadTracking/libs/UnityStubs.cs`, and are never redistributed.
+`cameraunlock-core/csharp/stubs/UnityStubs.cs`, and are never redistributed.
