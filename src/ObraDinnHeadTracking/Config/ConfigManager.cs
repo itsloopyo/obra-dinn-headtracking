@@ -1,4 +1,6 @@
 using BepInEx.Configuration;
+using CameraUnlock.Core.Data;
+using CameraUnlock.Core.Math;
 using UnityEngine;
 
 namespace HeadTracking.Config
@@ -156,7 +158,7 @@ namespace HeadTracking.Config
             LocalSmoothing = config.Bind(
                 "Smoothing",
                 "LocalSmoothing",
-                0.0f,
+                SmoothingUtils.DefaultLocalSmoothing,
                 new ConfigDescription(
                     "Smoothing applied when the tracker runs on this machine (loopback). " +
                     "0 = no smoothing, 1 = heavy. Covers rotation and position.",
@@ -167,7 +169,7 @@ namespace HeadTracking.Config
             RemoteSmoothing = config.Bind(
                 "Smoothing",
                 "RemoteSmoothing",
-                0.15f,
+                SmoothingUtils.DefaultRemoteSmoothing,
                 new ConfigDescription(
                     "Smoothing applied when the tracker is a remote device on the network. " +
                     "0 = no smoothing, 1 = heavy. Covers rotation and position.",
@@ -216,7 +218,7 @@ namespace HeadTracking.Config
             PositionLimitX = config.Bind(
                 "Position",
                 "PositionLimitX",
-                0.30f,
+                PositionSettings.Default.LimitX,
                 new ConfigDescription(
                     "Maximum lateral displacement in meters (prevents wall clipping)",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -226,7 +228,7 @@ namespace HeadTracking.Config
             PositionLimitY = config.Bind(
                 "Position",
                 "PositionLimitY",
-                0.20f,
+                PositionSettings.Default.LimitY,
                 new ConfigDescription(
                     "Maximum vertical displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -236,7 +238,7 @@ namespace HeadTracking.Config
             PositionLimitZ = config.Bind(
                 "Position",
                 "PositionLimitZ",
-                0.40f,
+                PositionSettings.Default.LimitZ,
                 new ConfigDescription(
                     "Maximum forward depth displacement in meters (prevents wall clipping)",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
@@ -246,7 +248,7 @@ namespace HeadTracking.Config
             PositionLimitZBack = config.Bind(
                 "Position",
                 "PositionLimitZBack",
-                0.10f,
+                PositionSettings.Default.LimitZBack,
                 new ConfigDescription(
                     "Maximum backward depth displacement in meters",
                     new AcceptableValueRange<float>(0.01f, 0.5f)
