@@ -20,7 +20,7 @@ stays in the repository and ships in neither ZIP.
 | Lib.Harmony | upstream of HarmonyX | MIT | Not shipped directly; HarmonyX derives from it |
 | Mono.Cecil | 0.10.4 | MIT | Inside the vendored BepInEx zip |
 | MonoMod | 22.01.29.01 | MIT | Inside the vendored BepInEx zip |
-| cameraunlock-core | fec3b4c8a6fe9c45401cf65d3d43d4f5acd22b72 | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` in both ZIPs |
+| cameraunlock-core | f441e29427b7422a584ba492dddd7788881804b0 | MIT | Shipped as `CameraUnlock.Core.dll` and `CameraUnlock.Core.Unity.dll` in both ZIPs |
 | OpenTrack | n/a | ISC | Not bundled; UDP protocol interoperability only |
 
 The installer ZIP carries `vendor/bepinex/BepInEx_win_x86.zip` verbatim. That
@@ -558,7 +558,7 @@ code but it carries a different copyright holder from the `LICENSE` at the root
 of this repository, so its licence is reproduced here in full and travels with
 the binaries in every ZIP.
 
-- Pinned commit: `fec3b4c8a6fe9c45401cf65d3d43d4f5acd22b72`
+- Pinned commit: `f441e29427b7422a584ba492dddd7788881804b0`
 
 ```
 MIT License
