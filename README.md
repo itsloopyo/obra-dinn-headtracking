@@ -8,6 +8,7 @@ An unofficial head tracking mod for Return of the Obra Dinn that moves the view 
 
 - **Decoupled look + aim**: Look around freely with your head while your aim stays independent
 - **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol
+- **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
 - **Framerate unlock**: Optional removal of the game's 60 FPS cap for smoother tracking
 
 ## Requirements
@@ -17,6 +18,13 @@ An unofficial head tracking mod for Return of the Obra Dinn that moves the view 
 - Windows
 
 ## Installation
+
+### Lopari
+
+Download [Lopari](https://lopari.app), choose **Return of the Obra Dinn**, and click
+**Play with head tracking**.
+
+### Standalone Installer
 
 1. Download the latest release from the [Releases page](https://github.com/itsloopyo/obra-dinn-headtracking/releases)
 2. Extract the ZIP anywhere
