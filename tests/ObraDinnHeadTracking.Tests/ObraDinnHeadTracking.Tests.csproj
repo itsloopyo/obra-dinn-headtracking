@@ -40,6 +40,7 @@
   <ItemGroup>
     <Compile Include="..\..\src\ObraDinnHeadTracking\Legacy\*.cs" Link="Legacy\%(Filename)%(Extension)" />
     <Compile Include="..\..\src\ObraDinnHeadTracking\Config\*.cs" Link="Config\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\ObraDinnHeadTracking\Camera\AxisConversion.cs" Link="Camera\AxisConversion.cs" />
     <Compile Include="..\config_differential\**\*.cs" Link="config_differential\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\cameraunlock-core\csharp\testing\IniMutations.cs" Link="IniMutations.cs" />
   </ItemGroup>

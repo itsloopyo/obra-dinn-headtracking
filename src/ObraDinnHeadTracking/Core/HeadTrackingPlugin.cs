@@ -70,11 +70,6 @@ namespace HeadTracking.Core
         // Connection state tracking
         private bool _wasReceiving;
 
-        // Every published build shipped PositionSensitivityX/Y/Z = 2.0 and applied it here. The
-        // setting is gone and its shipped value stays in the code, so a default lean moves the
-        // view as far as it always did.
-        private const float PositionScale = LegacyConfigImport.ShippedPositionSensitivity;
-
         private const float ConfigNotificationSeconds = 8f;
 
 
@@ -114,7 +109,7 @@ namespace HeadTracking.Core
             _positionProcessor = new PositionProcessor
             {
                 Settings = new PositionSettings(
-                    PositionScale, PositionScale, PositionScale,
+                    AxisConversion.PositionScale, AxisConversion.PositionScale, AxisConversion.PositionScale,
                     _config.Position.LimitX,
                     _config.Position.LimitY,
                     _config.Position.LimitYDown,

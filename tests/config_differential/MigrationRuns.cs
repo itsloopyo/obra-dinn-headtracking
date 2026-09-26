@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using BepInEx.Configuration;
 using CameraUnlock.Core.Config;
+using HeadTracking.Camera;
 using HeadTracking.Config;
 using HeadTracking.Legacy;
 
@@ -197,8 +198,8 @@ namespace HeadTracking.Tests.Differential
         public static SortedDictionary<string, string> Of(ObraDinnConfig c)
         {
             var s = new SortedDictionary<string, string>(StringComparer.Ordinal);
-            string one = LegacyStartup.Text(LegacyConfigImport.ShippedRotationSensitivity);
-            string two = LegacyStartup.Text(LegacyConfigImport.ShippedPositionSensitivity);
+            string one = LegacyStartup.Text(1.0f);
+            string two = LegacyStartup.Text(AxisConversion.PositionScale);
             s["TrackingEnabled"] = LegacyStartup.Text(c.EnableOnStartup);
             s["RotationEnabled"] = LegacyStartup.Text(c.RotationEnabled);
             s["PositionEnabled"] = LegacyStartup.Text(c.PositionEnabled);

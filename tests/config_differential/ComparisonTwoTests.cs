@@ -157,9 +157,15 @@ namespace HeadTracking.Tests.Differential
 
                 SortedDictionary<string, string> before = LegacyStartup.Of(old);
                 SortedDictionary<string, string> after = ConvertedStartup.Of(import.Config);
+                // A sensitivity group is compared unless one of its values was dropped: the folded
+                // values are what the runtime applies now, so they must equal what v1.3.0 applied.
+                bool rotationDropped = result.Dropped.Any(d => d.Rule == DropRule.PoseShaping && d.Section == "Sensitivity");
+                bool positionDropped = result.Dropped.Any(d => d.Rule == DropRule.PoseShaping && d.Section == "Position");
                 foreach (string key in before.Keys)
                 {
-                    if (key == "RotationSensitivity" || key == "PositionSensitivity" || key == "ReticleVisible" || key == "ReticleToggleKey") continue;
+                    if (key == "RotationSensitivity" && rotationDropped) continue;
+                    if (key == "PositionSensitivity" && positionDropped) continue;
+                    if (key == "ReticleVisible" || key == "ReticleToggleKey") continue;
                     if (before[key] != after[key]) failures.Add(input.Name + ": " + key + " " + before[key] + " -> " + after[key]);
                 }
                 if (after.ContainsKey("ReticleToggleKey")) failures.Add(input.Name + ": a reticle toggle");
