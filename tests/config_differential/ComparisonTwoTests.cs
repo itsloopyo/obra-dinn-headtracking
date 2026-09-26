@@ -33,9 +33,12 @@ namespace HeadTracking.Tests.Differential
             "[Hotkeys]\r\nToggleKey=F8\r\nCycleTrackingModeKey=F7\r\nYawModeKey=F6\r\n";
 
         // A v1.3.0 .cfg can hold a number for a key, which BepInEx's enum parse accepts and Unity
-        // names no key for. No hotkey list can hold it and no approved rule drops it, so the owner
-        // defers these imports: the player keeps what v1.3.0 ran on, nothing is written, and the
-        // import runs again at the next start. The reticle key is dropped whatever it holds.
+        // names no key for. No hotkey list can hold it and no approved rule drops it, so the config
+        // owner defers these imports: the player keeps what v1.3.0 ran on, nothing is written, and
+        // the import runs again at the next start. The reticle key is dropped whatever it holds.
+        // These are unresolved, not accepted: core's config-format.json has no rule for them yet
+        // (N1 covers native virtual-key codes only). Once it records one, the map applies it and
+        // this list is deleted. An input outside it that the codecs cannot hold still fails here.
         private static readonly string[] DeferredValues = { "value 010", "value -1", "value +1", "value space then 1", "value 1 then space", "value 2" };
 
         private static IEnumerable<string> Deferred()
