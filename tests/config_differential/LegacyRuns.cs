@@ -337,7 +337,7 @@ namespace HeadTracking.Tests.Differential
             return KeyName((int)primary) + ", " + chord;
         }
 
-        /// <summary>A Unity key code's name, or #code for one that names no key.</summary>
+        /// <summary>A Unity key code's name, or the number for one that names no key.</summary>
         public static string KeyName(int unityKeyCode)
         {
             try
@@ -346,7 +346,7 @@ namespace HeadTracking.Tests.Differential
             }
             catch (ArgumentException)
             {
-                return "#" + unityKeyCode.ToString(CultureInfo.InvariantCulture);
+                return unityKeyCode.ToString(CultureInfo.InvariantCulture);
             }
         }
     }

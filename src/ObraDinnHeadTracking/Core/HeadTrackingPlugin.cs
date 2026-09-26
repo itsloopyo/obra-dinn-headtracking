@@ -1,9 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using CameraUnlock.Core.Config;
 using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
+using CameraUnlock.Core.Tracking;
 using CameraUnlock.Core.Unity.Extensions;
 using CameraUnlock.Core.Unity.Rendering;
 using CameraUnlock.Core.Unity.UI;
@@ -49,7 +54,8 @@ namespace HeadTracking.Core
         private Harmony _harmony;
 
         // Components
-        private ModConfig _config;
+        private ObraDinnConfig _config;
+        private ConfigOwner<ObraDinnConfig> _configOwner;
         private OpenTrackReceiver _receiver;
         private TrackingProcessor _processor;
         private PoseInterpolator _interpolator;
@@ -60,17 +66,16 @@ namespace HeadTracking.Core
         private InputHandler _inputHandler;
         private NotificationUI _notificationUI;
         private IMGUIReticle _aimReticle;
-        private bool _reticleEnabled;
-        private TrackingMode _trackingMode = TrackingMode.Normal;
+        private TrackingMode _trackingMode;
         // Connection state tracking
         private bool _wasReceiving;
 
-        private enum TrackingMode
-        {
-            Normal,
-            RotationOnly,
-            PositionOnly,
-        }
+        // Every published build shipped PositionSensitivityX/Y/Z = 2.0 and applied it here. The
+        // setting is gone and its shipped value stays in the code, so a default lean moves the
+        // view as far as it always did.
+        private const float PositionScale = LegacyConfigImport.ShippedPositionSensitivity;
+
+        private const float ConfigNotificationSeconds = 8f;
 
 
         private void Awake()
@@ -88,13 +93,10 @@ namespace HeadTracking.Core
             MouseLookPatches.ApplyPatch(_harmony);
             HeadMotionPatch.ApplyPatch(_harmony);
 
-            // Initialize configuration (needed before framerate patch)
-            bool configFound;
-            _config = LegacyConfigMap.ToRuntime(LegacyConfigReader.Read(Config, out configFound));
-            // The reader writes nothing; this is the write BepInEx's Bind made on every start,
-            // which creates the .cfg on the first one.
-            Config.SaveOnConfigSet = true;
-            Config.Save();
+            // Built before the config loads, so the owner's status sink can reach the player
+            // when the file cannot be read, imported or created.
+            _notificationUI = new NotificationUI();
+            LoadConfig();
 
             // Apply framerate unlock patch if enabled
             FrameratePatch.ApplyPatch(_harmony, _config.UnlockFramerate);
@@ -105,29 +107,21 @@ namespace HeadTracking.Core
             {
                 LocalSmoothing = _config.LocalSmoothing,
                 RemoteSmoothing = _config.RemoteSmoothing,
-                Sensitivity = new SensitivitySettings(
-                    _config.YawSensitivity,
-                    _config.PitchSensitivity,
-                    _config.RollSensitivity,
-                    invertYaw: false,
-                    invertPitch: false,
-                    invertRoll: false
-                ),
+                Sensitivity = SensitivitySettings.Default,
                 Deadzone = DeadzoneSettings.None
             };
             _interpolator = new PoseInterpolator();
             _positionProcessor = new PositionProcessor
             {
-                Settings = PositionSettings.Symmetric(
-                    _config.PositionSensitivityX,
-                    _config.PositionSensitivityY,
-                    _config.PositionSensitivityZ,
-                    _config.PositionLimitX,
-                    _config.PositionLimitY,
-                    _config.PositionLimitZ,
-                    _config.PositionLimitZBack,
-                    localSmoothing: _config.LocalSmoothing,
-                    remoteSmoothing: _config.RemoteSmoothing,
+                Settings = new PositionSettings(
+                    PositionScale, PositionScale, PositionScale,
+                    _config.Position.LimitX,
+                    _config.Position.LimitY,
+                    _config.Position.LimitYDown,
+                    _config.Position.LimitZ,
+                    _config.Position.LimitZBack,
+                    _config.LocalSmoothing,
+                    _config.RemoteSmoothing,
                     invertX: true, invertY: false, invertZ: false
                 ),
                 TrackerPivotForward = _config.TrackerPivotForward
@@ -137,29 +131,27 @@ namespace HeadTracking.Core
                 _receiver, _processor, _interpolator,
                 _positionProcessor, _positionInterpolator);
             _gameStateDetector = new GameStateDetector();
-            _inputHandler = new InputHandler(_config);
-            _notificationUI = new NotificationUI();
+            _inputHandler = new InputHandler(_config, msg => Logger.LogWarning(msg));
 
             // Initialize aim reticle
-            _reticleEnabled = _config.ShowReticle;
             _aimReticle = gameObject.AddComponent<IMGUIReticle>();
             _aimReticle.Style = ReticleStyle.Dot;
             _aimReticle.BaseSizeAt1080p = 6;
             _aimReticle.OutlineWidthAt1080p = 2;
             _aimReticle.ReticleColor = UnityEngine.Color.white;
             _aimReticle.OutlineColor = UnityEngine.Color.black;
-            _aimReticle.IsVisible = _reticleEnabled;
+            _aimReticle.IsVisible = true;
             _aimReticle.InitializeWithOffset(
                 getOffset: () => CalculateAimOffset(),
-                shouldDraw: () => _gameStateDetector.IsGameplayActive && _reticleEnabled && _cameraController.IsApplyingTracking
+                shouldDraw: () => _gameStateDetector.IsGameplayActive && _cameraController.IsApplyingTracking
             );
 
-            // Initialize position enabled from config
-            _cameraController.PositionEnabled = _config.PositionEnabled;
+            // The pair always names a mode: the table reads a pair that names none as its default.
+            _trackingMode = TrackingModeChannels.Decode(_config.RotationEnabled, _config.PositionEnabled).Value;
+            ApplyTrackingMode();
 
             // Subscribe to input events
             _inputHandler.OnTogglePressed += HandleToggle;
-            _inputHandler.OnToggleReticlePressed += HandleToggleReticle;
             _inputHandler.OnCycleTrackingModePressed += HandleCycleTrackingMode;
 
             // Subscribe to game state changes
@@ -175,7 +167,7 @@ namespace HeadTracking.Core
             _receiver.Start(_config.UdpPort);
 
             // Set initial tracking state from config
-            TrackingEnabled = _config.EnabledOnStartup;
+            TrackingEnabled = _config.EnableOnStartup;
 
             Logger.LogInfo($"{PluginName} initialized. Tracking {(TrackingEnabled ? "enabled" : "disabled")}");
 
@@ -183,10 +175,11 @@ namespace HeadTracking.Core
                 Logger.LogWarning("MouseLook patch FAILED - head tracking will NOT work");
             Logger.LogInfo($"Listening on UDP port {_config.UdpPort}");
 
-            // Show startup notification if enabled
-            if (_config.ShowStartupNotification)
+            // A config the owner could not load or create has already put its message up, and the
+            // startup toast would replace it.
+            if (_config.ShowStartupNotification && !_notificationUI.IsDisplaying)
             {
-                string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.CycleTrackingModeKey}] Cycle Mode, [{_inputHandler.ToggleReticleKey}] Reticle";
+                string keyInfo = $"[{_config.ToggleKeyName}] Toggle, [{_config.CycleTrackingModeKeyName}] Cycle Mode";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{statusInfo}\n{keyInfo}", 4f);
             }
@@ -244,7 +237,6 @@ namespace HeadTracking.Core
 
             // Unsubscribe from events
             _inputHandler.OnTogglePressed -= HandleToggle;
-            _inputHandler.OnToggleReticlePressed -= HandleToggleReticle;
             _inputHandler.OnCycleTrackingModePressed -= HandleCycleTrackingMode;
             _gameStateDetector.StateChanged -= OnGameStateChanged;
             CameraPatches.OnSceneLoaded -= OnSceneLoadedPatch;
@@ -279,45 +271,122 @@ namespace HeadTracking.Core
             }
         }
 
-        private void HandleToggleReticle()
-        {
-            _reticleEnabled = !_reticleEnabled;
-            _aimReticle.IsVisible = _reticleEnabled;
-
-            if (_reticleEnabled)
-            {
-                _notificationUI.ShowNotification("Reticle: ON", NotificationType.Success, 1.5f);
-            }
-            else
-            {
-                _notificationUI.ShowNotification("Reticle: OFF", NotificationType.Warning, 1.5f);
-            }
-            Logger.LogInfo($"Reticle {(_reticleEnabled ? "enabled" : "disabled")}");
-        }
-
         private void HandleCycleTrackingMode()
         {
             _trackingMode = (TrackingMode)(((int)_trackingMode + 1) % 3);
+            ApplyTrackingMode();
 
             switch (_trackingMode)
             {
-                case TrackingMode.Normal:
-                    _cameraController.RotationEnabled = true;
-                    _cameraController.PositionEnabled = true;
+                case TrackingMode.RotationAndPosition:
                     _notificationUI.ShowNotification("Tracking: Rotation + Position", NotificationType.Success, 1.5f);
                     break;
                 case TrackingMode.RotationOnly:
-                    _cameraController.RotationEnabled = true;
-                    _cameraController.PositionEnabled = false;
                     _notificationUI.ShowNotification("Tracking: Rotation only", NotificationType.Info, 1.5f);
                     break;
                 case TrackingMode.PositionOnly:
-                    _cameraController.RotationEnabled = false;
-                    _cameraController.PositionEnabled = true;
                     _notificationUI.ShowNotification("Tracking: Position only", NotificationType.Info, 1.5f);
                     break;
             }
-            Logger.LogInfo($"Tracking mode: {_trackingMode}");
+            Logger.LogInfo($"Tracking mode: {_trackingMode.Description()}");
+
+            bool rotation;
+            bool position;
+            TrackingModeChannels.Encode(_trackingMode, out rotation, out position);
+            SaveConfig(c =>
+            {
+                c.RotationEnabled = rotation;
+                c.PositionEnabled = position;
+            });
+        }
+
+        private void ApplyTrackingMode()
+        {
+            bool rotation;
+            bool position;
+            TrackingModeChannels.Encode(_trackingMode, out rotation, out position);
+            _cameraController.RotationEnabled = rotation;
+            _cameraController.PositionEnabled = position;
+        }
+
+        /// <summary>
+        /// The settings live in BepInEx\config\CameraUnlock.ini, read and written by core's config
+        /// owner, with rows set to default following the player's Defaults.ini. Nothing is bound
+        /// through BepInEx's ConfigFile at runtime, so ConfigurationManager does not list them.
+        /// While CameraUnlock.ini is absent the owner imports the plugin's .cfg, the file every
+        /// earlier build read, through the frozen v1.3.0 reader, and never writes that file.
+        /// </summary>
+        private void LoadConfig()
+        {
+            _configOwner = new ConfigOwner<ObraDinnConfig>(new ConfigOwnerOptions<ObraDinnConfig>
+            {
+                Path = ConfigPath,
+                Table = ObraDinnConfig.Table(),
+                Import = LegacyConfigImport.For(Config),
+                LegacySourcePath = Config.ConfigFilePath,
+                Header = new RenderHeader(ObraDinnConfig.DisplayName),
+                Defaults = DefaultsFile.PerUser(),
+                StatusSink = ShowConfigMessage
+            });
+
+            _loadMessages = string.Empty;
+            ConfigLoadResult<ObraDinnConfig> loaded = _configOwner.Load();
+            _loadMessages = null;
+            _config = loaded.Config;
+
+            // The owner writes each diagnostic as "<path>: <description>" among lines that only
+            // report what it did, so the complaints are picked out by their text.
+            var complaints = new HashSet<string>();
+            foreach (CanonicalDiagnostic diagnostic in loaded.Diagnostics)
+                complaints.Add(ConfigPath + ": " + diagnostic.Describe());
+            bool usable = loaded.Status == ConfigLoadStatus.Canonical
+                          || loaded.Status == ConfigLoadStatus.Migrated
+                          || loaded.Status == ConfigLoadStatus.Created;
+            foreach (string line in loaded.Log)
+            {
+                if (usable && !complaints.Contains(line)) Logger.LogInfo(line);
+                else Logger.LogWarning(line);
+            }
+            Logger.LogInfo("Config " + ConfigPath + ": " + loaded.Status);
+        }
+
+        private static string ConfigPath
+        {
+            get { return Path.Combine(Paths.ConfigPath, "CameraUnlock.ini"); }
+        }
+
+        // Non-null while Load runs. Load can hand the sink two messages, the config file's and
+        // then one about Defaults.ini, and the notification shows one message at a time, so the
+        // second is shown beneath the first rather than in its place.
+        private string _loadMessages;
+
+        private void ShowConfigMessage(string message)
+        {
+            if (_loadMessages != null)
+            {
+                _loadMessages = _loadMessages.Length == 0 ? message : _loadMessages + "\n" + message;
+                message = _loadMessages;
+            }
+            _notificationUI.ShowNotification(message, NotificationType.Warning, ConfigNotificationSeconds);
+        }
+
+        /// <summary>
+        /// Called after the new value is already applied. A save that fails is logged, the owner
+        /// shows the player why, and the session keeps the new value.
+        /// </summary>
+        private void SaveConfig(Action<ObraDinnConfig> change)
+        {
+            ConfigSaveResult saved = _configOwner.Save(change);
+            if (saved.Status == ConfigSaveStatus.Saved)
+            {
+                // A row that held default and now holds a value, so it stops following
+                // Defaults.ini in this game.
+                foreach (string line in saved.Log) Logger.LogInfo(line);
+                return;
+            }
+            foreach (string line in saved.Log) Logger.LogWarning(line);
+            Logger.LogWarning(ConfigPath + ": " + saved.Status + ": " + saved.Reason
+                              + " The change applies to this session only.");
         }
 
         /// <summary>

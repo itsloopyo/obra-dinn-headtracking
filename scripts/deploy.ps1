@@ -37,9 +37,9 @@ Write-DeploymentSuccess `
     -ModName "Head Tracking mod" `
     -DeployPath $result.DeployedDllPath `
     -Controls @(
-        "End       - Toggle head tracking on/off",
-        "Page Up   - Cycle tracking mode (normal / rotation-only / position-only)",
-        "Page Down - Toggle aim reticle on/off",
+        "End     - Toggle head tracking on/off",
+        "Page Up - Cycle tracking mode (rotation + position / rotation only / position only)",
         "",
-        "No nav cluster? Chords: Ctrl+Shift+ Y=Toggle G=Mode H=Reticle"
+        "No nav cluster? Chords: Ctrl+Shift+ Y=Toggle G=Mode",
+        "These are the default keys. BepInEx\config\CameraUnlock.ini sets them."
     )

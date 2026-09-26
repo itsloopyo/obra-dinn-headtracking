@@ -1,5 +1,39 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Settings move to `BepInEx\config\CameraUnlock.ini`. Earlier versions of the mod kept these settings in `com.headtracking.obradinn.cfg`, in the same folder. The first time this version starts and finds no `CameraUnlock.ini`, it reads your settings from `com.headtracking.obradinn.cfg` and writes them into `CameraUnlock.ini`. It never changes `com.headtracking.obradinn.cfg`, and does not read it again while `CameraUnlock.ini` exists.
+- A setting that the defaults the README shows set to `default` is written as `default` when the value imported for it equals its default at that start, which is the value `Defaults.ini` gives it, or the built-in value where `Defaults.ini` gives none. It then follows `Defaults.ini`. Every other setting is written with the value imported for it.
+- `RotationEnabled` and `PositionEnabled` are one setting here, the tracking mode, so both are written as `default` or neither is.
+- Comments, and keys the mod never read, are not carried over. Nor are these, where your old file had them:
+  - A sensitivity, scale, deadzone, response curve or axis inversion you changed from its default. Set these in your tracker instead.
+  - Reticle settings, and a key that toggled the reticle.
+- An older version of the mod reads `com.headtracking.obradinn.cfg` and never reads `CameraUnlock.ini`, so a setting you change after updating is not in `com.headtracking.obradinn.cfg`.
+- Deleting only `CameraUnlock.ini` makes the next start read `com.headtracking.obradinn.cfg` again. To go back to the defaults, replace everything in `CameraUnlock.ini` with the defaults the README shows. Every setting they set to `default` then follows `Defaults.ini`.
+- BepInEx's ConfigurationManager no longer lists these settings. Edit `BepInEx\config\CameraUnlock.ini` with any text editor.
+- Hotkeys are written as key names, and each hotkey lists every key that triggers it, the Ctrl+Shift chord included: `ToggleKey=End, Ctrl+Shift+Y`.
+- A hotkey bound to a plain key no longer fires while Ctrl and Shift are both held, so Ctrl+Shift with that key reaches only a binding that names the chord.
+- On Linux and macOS without Wine or Proton, this version reads its settings and saves none: it creates no `CameraUnlock.ini`, reads your settings from `com.headtracking.obradinn.cfg` again at every start while there is no `CameraUnlock.ini`, and a change made in game lasts until the game closes.
+- The tracking mode `Page Up` picks is saved to `CameraUnlock.ini`, and the next start begins in it. With positional tracking off at start, the first press now goes to position only; earlier versions spent that press on rotation only, which was already the state.
+- Several settings have new names and sections in `CameraUnlock.ini`: `EnabledOnStartup` is `EnableOnStartup`, `UDPPort` is `UdpPort`, `[Keybindings]` is `[Hotkeys]`, `UnlockFramerate` is under `[Display]`, and the two notification switches are under `[Notifications]`. The import carries each value over.
+- `PositionLimitY` no longer sets the downward limit as well: `PositionLimitYDown` is its own setting. The import writes your old `PositionLimitY` into both.
+- A new `CameraUnlock.ini` sets `TrackerPivotForward` to `default`, whose built-in value is 0.0, which turns the compensation off. Earlier versions started at 0.08. An imported `com.headtracking.obradinn.cfg` keeps the value it held, 0.08 unless you changed it.
+- An old file that holds a number where a key name belongs for `ToggleKey` or `CycleTrackingModeKey` (for example `ToggleKey = 2`) is not imported. The mod runs that session on the settings it read, saves nothing, says so on screen and in `BepInEx/LogOutput.log`, and tries again at the next start.
+
+### Added
+
+- A setting set to `default` in `CameraUnlock.ini` takes its value from `Defaults.ini`, which every head tracking mod that keeps its settings in `CameraUnlock.ini` reads. Head tracking mods that keep their settings in another file do not read it, and neither do earlier versions of this mod. Writing a value in place of `default` changes that setting for this game only. When the mod saves a setting that a hotkey changed in game, it writes the new value in place of `default`, so that setting no longer follows `Defaults.ini` in this game until you set it to `default` again.
+- `Defaults.ini` is `%AppData%\CameraUnlock\Defaults.ini` on Windows; `$XDG_CONFIG_HOME/CameraUnlock/Defaults.ini` on Linux, or `~/.config/CameraUnlock/Defaults.ini` where `XDG_CONFIG_HOME` is not set, under Wine and Proton too; and `~/Library/Application Support/CameraUnlock/Defaults.ini` on macOS. The mod's log, where it writes one, names the file it read.
+- When the mod starts and finds no `Defaults.ini`, it creates one holding the built-in values, unless Windows runs the game as a packaged app, or the game runs on Linux or macOS without Wine or Proton. The mod never changes `Defaults.ini` after that.
+
+### Removed
+
+- The key that toggled the reticle, and the reticle settings. The aim dot is drawn whenever head tracking is turning the view during gameplay, as it was by default. `Page Down` and `Ctrl+Shift+H` no longer do anything.
+- The sensitivity, scale, deadzone, response curve and axis inversion settings. Set these in your tracker app instead.
+- With these settings at their shipped defaults the camera moves as it did before.
+
 ## [1.3.0] - 2026-08-20
 
 ### Fixed

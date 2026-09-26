@@ -1,19 +1,19 @@
 using System;
+using System.Collections.Generic;
+using CameraUnlock.Core.Input;
 using CameraUnlock.Core.Unity.Extensions;
 using HeadTracking.Config;
-using UnityEngine;
 
 namespace HeadTracking.Core
 {
     /// <summary>
-    /// Handles configurable keyboard input for the mod's hotkey actions.
-    /// Each action has a configurable nav-cluster key plus a fixed Ctrl+Shift+letter
-    /// chord, drawn from the T/Y/U/G/H/J cluster so keyboards without a nav block
-    /// still work.
+    /// Fires the mod's hotkey actions from the key lists in CameraUnlock.ini. Every binding in a
+    /// list is an ordinary item, the Ctrl+Shift chords included.
     /// </summary>
     public class InputHandler
     {
-        private readonly ModConfig _config;
+        private readonly KeyBinding[] _toggle;
+        private readonly KeyBinding[] _cycleTrackingMode;
 
         /// <summary>
         /// Fired when toggle key is pressed.
@@ -21,34 +21,15 @@ namespace HeadTracking.Core
         public event Action OnTogglePressed;
 
         /// <summary>
-        /// Fired when toggle reticle key is pressed.
-        /// </summary>
-        public event Action OnToggleReticlePressed;
-
-        /// <summary>
         /// Fired when cycle tracking mode key is pressed.
-        /// Cycles: normal -> rotation only -> position only -> normal.
+        /// Cycles: rotation and position -> rotation only -> position only -> rotation and position.
         /// </summary>
         public event Action OnCycleTrackingModePressed;
 
-        /// <summary>
-        /// The currently configured toggle key.
-        /// </summary>
-        public KeyCode ToggleKey => _config.ToggleKey;
-
-        /// <summary>
-        /// The currently configured toggle reticle key.
-        /// </summary>
-        public KeyCode ToggleReticleKey => _config.ToggleReticleKey;
-
-        /// <summary>
-        /// The currently configured cycle tracking mode key.
-        /// </summary>
-        public KeyCode CycleTrackingModeKey => _config.CycleTrackingModeKey;
-
-        public InputHandler(ModConfig config)
+        public InputHandler(ObraDinnConfig config, Action<string> logWarning)
         {
-            _config = config;
+            _toggle = Parse("ToggleKey", config.ToggleKeyName, logWarning);
+            _cycleTrackingMode = Parse("CycleTrackingModeKey", config.CycleTrackingModeKeyName, logWarning);
         }
 
         /// <summary>
@@ -56,20 +37,35 @@ namespace HeadTracking.Core
         /// </summary>
         public void CheckInput()
         {
-            if (ChordHotkeys.IsActionPressed(_config.ToggleKey, ChordHotkeys.ToggleLetter))
+            if (KeyBindingInput.IsTriggered(_toggle))
             {
                 OnTogglePressed?.Invoke();
             }
 
-            if (ChordHotkeys.IsActionPressed(_config.CycleTrackingModeKey, ChordHotkeys.PositionLetter))
+            if (KeyBindingInput.IsTriggered(_cycleTrackingMode))
             {
                 OnCycleTrackingModePressed?.Invoke();
             }
+        }
 
-            if (ChordHotkeys.IsActionPressed(_config.ToggleReticleKey, ChordHotkeys.FourthToggleLetter))
+        // The table's hotkey codec has read every list the file holds, so a list that does not
+        // parse reaches here only from a legacy import the owner deferred: a .cfg key code Unity
+        // names no key for, which the import writes as the number. v1.3.0 never fired on such a
+        // key and still fired the chord beside it, so the items that parse are bound and the
+        // rest are named in the log.
+        private static KeyBinding[] Parse(string key, string text, Action<string> logWarning)
+        {
+            KeyBinding[] bindings;
+            string error;
+            if (KeyBindings.TryParse(text, out bindings, out error)) return bindings;
+
+            var kept = new List<KeyBinding>();
+            foreach (string item in text.Split(','))
             {
-                OnToggleReticlePressed?.Invoke();
+                if (KeyBindings.TryParse(item, out bindings, out error)) kept.AddRange(bindings);
+                else logWarning("[Hotkeys] " + key + ": " + error + ", so it is not bound this session");
             }
+            return kept.ToArray();
         }
     }
 }
