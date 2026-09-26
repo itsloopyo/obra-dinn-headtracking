@@ -22,8 +22,12 @@ build = { cmd = "dotnet build src/ObraDinnHeadTracking/ObraDinnHeadTracking.cspr
 # declared as a field, or the reverse) compiles cleanly and only fails in
 # game. Needs the game installed; skips and succeeds without it.
 verify-refs = { cmd = "powershell -ExecutionPolicy Bypass -File cameraunlock-core/scripts/verify-assembly-refs.ps1 -GameId obra-dinn -BuildDir src/ObraDinnHeadTracking/bin/Release", depends-on = ["build"] }
+# The config tests, among them the differential test in tests/config_differential, which holds
+# the legacy import to the v1.3.0 reader it replaces on every published build's first-run file
+# and on core's mutation corpus.
+test = { cmd = "dotnet test tests/ObraDinnHeadTracking.Tests/ObraDinnHeadTracking.Tests.csproj -c Release", depends-on = ["build"] }
 install = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1 Release", depends-on = ["build"] }
-package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1", depends-on = ["build"] }
+package = { cmd = "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1", depends-on = ["test"] }
 uninstall = "scripts\\uninstall.cmd"
 clean = "dotnet clean src/ObraDinnHeadTracking/ObraDinnHeadTracking.csproj"
 # Bump vendored mod-loader copies to latest upstream within pinned range.

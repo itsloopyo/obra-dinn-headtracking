@@ -1,0 +1,62 @@
+# What the differential test compares, and where each file came from.
+# Columns: role, source (tag:path, a release asset, or the path in this repo), sha256 of the bytes.
+# v1.3.0 is the newest published release; there is no dev pre-release. Its reader is
+# src/ObraDinnHeadTracking/Config/ConfigManager.cs, which takes no core source: its defaults are
+# literals. The frozen reader in src/ObraDinnHeadTracking/Legacy is that file restructured to fill
+# LegacyConfig and write nothing, so comparison 1 is not empty by construction and runs on every input.
+published reader	v1.3.0:src/ObraDinnHeadTracking/Config/ConfigManager.cs	53ec6d5e320a7c7f76f797d6841ecd1a00eaa9d70b1917de436fcac5915c709e
+oracle copy	tests/config_differential/oracle/ConfigManager.cs	53ec6d5e320a7c7f76f797d6841ecd1a00eaa9d70b1917de436fcac5915c709e
+frozen from	963b0c9:src/ObraDinnHeadTracking/Config/ConfigManager.cs	98e1122b4d652a64f042a834319c9ff7b8dca804f7e97a0b44005248cd99a338
+frozen reader	src/ObraDinnHeadTracking/Legacy/LegacyConfig.cs	05616d08631470df54c9041b29c53e6618123092dbf897d33f9b2cab1f39bfd8
+frozen reader	src/ObraDinnHeadTracking/Legacy/LegacyConfigReader.cs	eb952ce7629838f2f9008e937295065d703d36a6f7ea1e27efb75e9e6cdb4a89
+frozen reader	src/ObraDinnHeadTracking/Legacy/LegacyConfigKeys.cs	2205f3ef288c971f6a975a590e1c754a8ae2aeff69a3b46481ba36cccc5acb38
+BepInEx	vendor/bepinex/BepInEx_win_x86.zip (BepInEx 5.4.23.5), whose BepInEx.dll the test and the harness below run	37651c79e40d6f909572a4f461ac25350bb3ef8fe7fbd29f1aa8791a33b84c82
+# No published build shipped the plugin .cfg, in a ZIP or as a launcher-manifest.json seed (every
+# seed is BepInEx/config/BepInEx.cfg), so the inputs are what each build writes at its first start.
+# A first-run file is the .cfg that build's own ObraDinnHeadTracking.dll, taken from its release
+# ZIP, writes when its ConfigManager.Initialize runs on a ConfigFile at a path with no file and
+# the plugin's BepInPlugin metadata: the published binary run once under the BepInEx above, with
+# the Unity stubs of pixi run setup-libs. The "Acceptable values" comment lines list the stub's
+# KeyCode members, not the game's; no reader reads a comment line. Predecessor builds are
+# itsloopyo/obra-dinn-headtracking-old2, whose v1.0.1 to v1.0.5 releases have no tag left. Its
+# v1.0.5 DLL declares version 1.0.4, so its first-run file equals the v1.0.4 one.
+input source	itsloopyo/obra-dinn-headtracking-old2 release v1.0.0 ObraDinnHeadTracking-v1.0.0.zip plugins/ObraDinnHeadTracking.dll f949faaaf69a9fef4156091256735b038b1cec064791b1113d3cfce3fa2e80ed	-
+input	tests/config_differential/data/first-run/predecessor-v1.0.0.cfg	0698178e9bed43322d9f90195dced46b4676eeeed9de9ba9470246be7ad008bf
+input source	itsloopyo/obra-dinn-headtracking-old2 release v1.0.1 ObraDinnHeadTracking-v1.0.1.zip plugins/ObraDinnHeadTracking.dll b99afe11c0419e89a0c12c7b11739e6bb12f44916e1f65dfe869ff7e889d47ed	-
+input	tests/config_differential/data/first-run/predecessor-v1.0.1.cfg	97d71ce302e9533b5281979f0a35df8d4618b4f37cb082674550243bfe86a941
+input source	itsloopyo/obra-dinn-headtracking-old2 release v1.0.2 ObraDinnHeadTracking-v1.0.2.zip plugins/ObraDinnHeadTracking.dll f0dd70569202ed15d1bd49ada84924a44d8abbbeff62eb73f8820b45c835d8ef	-
+input	tests/config_differential/data/first-run/predecessor-v1.0.2.cfg	595cc040e77c6e635873b9ed8332e48c0afbc07a335877a851369a0f46770a68
+input source	itsloopyo/obra-dinn-headtracking-old2 release v1.0.4 ObraDinnHeadTracking-v1.0.4.zip plugins/ObraDinnHeadTracking.dll fd4cdb31ce0804dd577ce3c0aaee43d31638789ecb839d9f3e6260630e3b0ba5	-
+input	tests/config_differential/data/first-run/predecessor-v1.0.4.cfg	fafc4b4ead15cbb138c8aea4045205d6566d05ca0d2263023d3b58da54b96029
+input source	itsloopyo/obra-dinn-headtracking-old2 release v1.0.5 ObraDinnHeadTracking-v1.0.5.zip plugins/ObraDinnHeadTracking.dll a04588ad1bd1ca77d438ab40361c295e286d423f5603825e7bfcab4a6def6eb7	-
+input	tests/config_differential/data/first-run/predecessor-v1.0.5.cfg	fafc4b4ead15cbb138c8aea4045205d6566d05ca0d2263023d3b58da54b96029
+input source	release v1.0.0 ObraDinnHeadTracking-v1.0.0.zip plugins/ObraDinnHeadTracking.dll 257c94065d15c5db0cb433570fc3c233d3dc2ca87e9b4dd5dd3b5f3fcd2e8d1e	-
+input	tests/config_differential/data/first-run/v1.0.0.cfg	fec70d5a24451ae5b43603d6d9a3db7d17dcb8bf8d9de3414754931fed64f00e
+input source	release v1.0.1 ObraDinnHeadTracking-v1.0.1.zip plugins/ObraDinnHeadTracking.dll 54564f6838e8976428efe23633e6883b5b51cf7380fd64e95b79930746a2167d	-
+input	tests/config_differential/data/first-run/v1.0.1.cfg	11836ba76b663e526b41947af60ef37718257f47e35ced558646d071fc449ff4
+input source	release v1.0.2 ObraDinnHeadTracking-v1.0.2.zip plugins/ObraDinnHeadTracking.dll 03aabf458cd27e27ad52841f4ff58eb0ed5af4ef738f649944d05b5a927c688d	-
+input	tests/config_differential/data/first-run/v1.0.2.cfg	e17ec0ee5212ad076acdc6a493537ef88361ba8dd85c65e1ed78c5b1c989626e
+input source	release v1.0.3 ObraDinnHeadTracking-v1.0.3.zip plugins/ObraDinnHeadTracking.dll fac1e0f5e684324ad6bec69781aa2ad6441cd721935b5c5aba2e6ef9a2ee1ebe	-
+input	tests/config_differential/data/first-run/v1.0.3.cfg	853139626680149124e9a15c8d62d246734ffa5f1ec8161a06adc3b7c6691ae9
+input source	release v1.0.4 ObraDinnHeadTracking-v1.0.4-installer.zip plugins/ObraDinnHeadTracking.dll 496bd02300d34b544a02ac5640e0463ce6708837ac3543f4a23f71544be11e18	-
+input	tests/config_differential/data/first-run/v1.0.4.cfg	5dde21f41cb9975938882264338775b19514e116436266841c67dd425caedb5c
+input source	release v1.0.5 ObraDinnHeadTracking-v1.0.5-installer.zip plugins/ObraDinnHeadTracking.dll 7edb3569dfb811e32d7f6999938af3bbb2e2d259ca61d3dd9bbe832e089a538d	-
+input	tests/config_differential/data/first-run/v1.0.5.cfg	4dc8f3aab89920ce299dfbf7afa2829b7dbfed629adf6f30976259b4210f2a42
+input source	release v1.0.6 ObraDinnHeadTracking-v1.0.6-installer.zip plugins/ObraDinnHeadTracking.dll 9e07e81ce89886a389fc6af497b99730deae771b6b31764855964215d37154a4	-
+input	tests/config_differential/data/first-run/v1.0.6.cfg	24bce7221003338194d489e8d6e702f47cd670ec580b3563408681700429cb02
+input source	release v1.0.7 ObraDinnHeadTracking-v1.0.7-installer.zip plugins/ObraDinnHeadTracking.dll fcaba5d9f476d37a75d41877b8f13d9b782de5da985c83088cf382f26e917259	-
+input	tests/config_differential/data/first-run/v1.0.7.cfg	209b665ce65a6efbbcdd24112aa1e2d3702e1481a4f6b217c65c82cd32e77040
+input source	release v1.1.0 ObraDinnHeadTracking-v1.1.0-installer.zip plugins/ObraDinnHeadTracking.dll d73a322806a16778f536868d75ecb787b45678cde4f22b46b5f81d40ff78d84c	-
+input	tests/config_differential/data/first-run/v1.1.0.cfg	7d4e014399cf2f5d17ea59c3ebcb61d6f456c0c7c92517582a2aff36d8c7cca7
+input source	release v1.1.1 ObraDinnHeadTracking-v1.1.1-installer.zip plugins/ObraDinnHeadTracking.dll 6b483e32b8671b5fec416238cc6409f8b558daf93f02b711ed42cee3bb36b0f8	-
+input	tests/config_differential/data/first-run/v1.1.1.cfg	947c320bb1e8ca806db717a39d98d5b3cb9331ee15990652c08d83c737d8caeb
+input source	release v1.1.2 ObraDinnHeadTracking-v1.1.2-installer.zip plugins/ObraDinnHeadTracking.dll 3abe83eec84e4939e14fa2f2d002e356c1900baf9e26b2ee4dcd8349a822093b	-
+input	tests/config_differential/data/first-run/v1.1.2.cfg	a9dc744c2bdde36016fc6d30056f2f5e923e032f3ea43e7b49c0ec2d91a70dbe
+input source	release v1.1.3 ObraDinnHeadTracking-v1.1.3-installer.zip plugins/ObraDinnHeadTracking.dll bf62319e7cfcd9cf81bfbefee48c993a48d15d69cdeb90e082c4f5f10645fae7	-
+input	tests/config_differential/data/first-run/v1.1.3.cfg	f2065a726ce47f9f09586bb306b3814bad68daa82147f865ea94089dc93986fe
+input source	release v1.2.0 ObraDinnHeadTracking-v1.2.0-installer.zip plugins/ObraDinnHeadTracking.dll 98208ee5bb737f192e1d9600f31f3f8cd4b81964f163407c51dac68a476ae10e	-
+input	tests/config_differential/data/first-run/v1.2.0.cfg	29d9853efc3d81e6746c33292525a2182047d6a180719b49c9f0fc06fce001fb
+input source	release v1.2.1 ObraDinnHeadTracking-v1.2.1-installer.zip plugins/ObraDinnHeadTracking.dll a1e0c7ec38b19aff190fe9a22da74ba6ef6ce71d454b1096584f4bda5304da85	-
+input	tests/config_differential/data/first-run/v1.2.1.cfg	acf6fa75ed4b0a67315088b1be7892ad3a7d672306aa9458a0fc6cad64a34b56
+input source	release v1.3.0 ObraDinnHeadTracking-v1.3.0-installer.zip plugins/ObraDinnHeadTracking.dll 6215adc2eee60f459cb65a568b9386373b399827f0f0363f0142e6118d05b9fe	-
+input	tests/config_differential/data/first-run/v1.3.0.cfg	717d7f6b13689ae9c9eac4b6fea488a9990b25897d73ec957b28702abf3f9a8a

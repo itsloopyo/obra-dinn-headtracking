@@ -9,6 +9,7 @@ using CameraUnlock.Core.Unity.Rendering;
 using CameraUnlock.Core.Unity.UI;
 using HeadTracking.Camera;
 using HeadTracking.Config;
+using HeadTracking.Legacy;
 using HeadTracking.Patches;
 
 namespace HeadTracking.Core
@@ -48,7 +49,7 @@ namespace HeadTracking.Core
         private Harmony _harmony;
 
         // Components
-        private ConfigManager _config;
+        private ModConfig _config;
         private OpenTrackReceiver _receiver;
         private TrackingProcessor _processor;
         private PoseInterpolator _interpolator;
@@ -88,22 +89,26 @@ namespace HeadTracking.Core
             HeadMotionPatch.ApplyPatch(_harmony);
 
             // Initialize configuration (needed before framerate patch)
-            _config = new ConfigManager();
-            _config.Initialize(Config);
+            bool configFound;
+            _config = LegacyConfigMap.ToRuntime(LegacyConfigReader.Read(Config, out configFound));
+            // The reader writes nothing; this is the write BepInEx's Bind made on every start,
+            // which creates the .cfg on the first one.
+            Config.SaveOnConfigSet = true;
+            Config.Save();
 
             // Apply framerate unlock patch if enabled
-            FrameratePatch.ApplyPatch(_harmony, _config.UnlockFramerate.Value);
+            FrameratePatch.ApplyPatch(_harmony, _config.UnlockFramerate);
 
             // Initialize components
             _receiver = new OpenTrackReceiver();
             _processor = new TrackingProcessor
             {
-                LocalSmoothing = _config.LocalSmoothing.Value,
-                RemoteSmoothing = _config.RemoteSmoothing.Value,
+                LocalSmoothing = _config.LocalSmoothing,
+                RemoteSmoothing = _config.RemoteSmoothing,
                 Sensitivity = new SensitivitySettings(
-                    _config.YawSensitivity.Value,
-                    _config.PitchSensitivity.Value,
-                    _config.RollSensitivity.Value,
+                    _config.YawSensitivity,
+                    _config.PitchSensitivity,
+                    _config.RollSensitivity,
                     invertYaw: false,
                     invertPitch: false,
                     invertRoll: false
@@ -114,18 +119,18 @@ namespace HeadTracking.Core
             _positionProcessor = new PositionProcessor
             {
                 Settings = PositionSettings.Symmetric(
-                    _config.PositionSensitivityX.Value,
-                    _config.PositionSensitivityY.Value,
-                    _config.PositionSensitivityZ.Value,
-                    _config.PositionLimitX.Value,
-                    _config.PositionLimitY.Value,
-                    _config.PositionLimitZ.Value,
-                    _config.PositionLimitZBack.Value,
-                    localSmoothing: _config.LocalSmoothing.Value,
-                    remoteSmoothing: _config.RemoteSmoothing.Value,
+                    _config.PositionSensitivityX,
+                    _config.PositionSensitivityY,
+                    _config.PositionSensitivityZ,
+                    _config.PositionLimitX,
+                    _config.PositionLimitY,
+                    _config.PositionLimitZ,
+                    _config.PositionLimitZBack,
+                    localSmoothing: _config.LocalSmoothing,
+                    remoteSmoothing: _config.RemoteSmoothing,
                     invertX: true, invertY: false, invertZ: false
                 ),
-                TrackerPivotForward = _config.TrackerPivotForward.Value
+                TrackerPivotForward = _config.TrackerPivotForward
             };
             _positionInterpolator = new PositionInterpolator();
             _cameraController = new CameraController(
@@ -136,7 +141,7 @@ namespace HeadTracking.Core
             _notificationUI = new NotificationUI();
 
             // Initialize aim reticle
-            _reticleEnabled = _config.ShowReticle.Value;
+            _reticleEnabled = _config.ShowReticle;
             _aimReticle = gameObject.AddComponent<IMGUIReticle>();
             _aimReticle.Style = ReticleStyle.Dot;
             _aimReticle.BaseSizeAt1080p = 6;
@@ -150,7 +155,7 @@ namespace HeadTracking.Core
             );
 
             // Initialize position enabled from config
-            _cameraController.PositionEnabled = _config.PositionEnabled.Value;
+            _cameraController.PositionEnabled = _config.PositionEnabled;
 
             // Subscribe to input events
             _inputHandler.OnTogglePressed += HandleToggle;
@@ -167,19 +172,19 @@ namespace HeadTracking.Core
 
             // Start UDP receiver
             _receiver.Log = msg => Logger.LogInfo(msg);
-            _receiver.Start(_config.UDPPort.Value);
+            _receiver.Start(_config.UdpPort);
 
             // Set initial tracking state from config
-            TrackingEnabled = _config.EnabledOnStartup.Value;
+            TrackingEnabled = _config.EnabledOnStartup;
 
             Logger.LogInfo($"{PluginName} initialized. Tracking {(TrackingEnabled ? "enabled" : "disabled")}");
 
             if (!MouseLookPatches.PatchApplied)
                 Logger.LogWarning("MouseLook patch FAILED - head tracking will NOT work");
-            Logger.LogInfo($"Listening on UDP port {_config.UDPPort.Value}");
+            Logger.LogInfo($"Listening on UDP port {_config.UdpPort}");
 
             // Show startup notification if enabled
-            if (_config.ShowStartupNotification.Value)
+            if (_config.ShowStartupNotification)
             {
                 string keyInfo = $"[{_inputHandler.ToggleKey}] Toggle, [{_inputHandler.CycleTrackingModeKey}] Cycle Mode, [{_inputHandler.ToggleReticleKey}] Reticle";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
@@ -211,7 +216,7 @@ namespace HeadTracking.Core
                 // bug report must not depend on a cosmetic on-screen setting.
                 Logger.LogInfo(isReceiving ? "OpenTrack connection established" : "OpenTrack connection lost");
 
-                if (_config.ShowConnectionNotifications.Value)
+                if (_config.ShowConnectionNotifications)
                 {
                     if (isReceiving)
                         _notificationUI.ShowConnectionEstablished();

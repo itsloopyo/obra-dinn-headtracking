@@ -13,7 +13,7 @@ namespace HeadTracking.Core
     /// </summary>
     public class InputHandler
     {
-        private readonly ConfigManager _config;
+        private readonly ModConfig _config;
 
         /// <summary>
         /// Fired when toggle key is pressed.
@@ -34,19 +34,19 @@ namespace HeadTracking.Core
         /// <summary>
         /// The currently configured toggle key.
         /// </summary>
-        public KeyCode ToggleKey => _config.ToggleKey.Value;
+        public KeyCode ToggleKey => _config.ToggleKey;
 
         /// <summary>
         /// The currently configured toggle reticle key.
         /// </summary>
-        public KeyCode ToggleReticleKey => _config.ToggleReticleKey.Value;
+        public KeyCode ToggleReticleKey => _config.ToggleReticleKey;
 
         /// <summary>
         /// The currently configured cycle tracking mode key.
         /// </summary>
-        public KeyCode CycleTrackingModeKey => _config.CycleTrackingModeKey.Value;
+        public KeyCode CycleTrackingModeKey => _config.CycleTrackingModeKey;
 
-        public InputHandler(ConfigManager config)
+        public InputHandler(ModConfig config)
         {
             _config = config;
         }
@@ -56,17 +56,17 @@ namespace HeadTracking.Core
         /// </summary>
         public void CheckInput()
         {
-            if (ChordHotkeys.IsActionPressed(_config.ToggleKey.Value, ChordHotkeys.ToggleLetter))
+            if (ChordHotkeys.IsActionPressed(_config.ToggleKey, ChordHotkeys.ToggleLetter))
             {
                 OnTogglePressed?.Invoke();
             }
 
-            if (ChordHotkeys.IsActionPressed(_config.CycleTrackingModeKey.Value, ChordHotkeys.PositionLetter))
+            if (ChordHotkeys.IsActionPressed(_config.CycleTrackingModeKey, ChordHotkeys.PositionLetter))
             {
                 OnCycleTrackingModePressed?.Invoke();
             }
 
-            if (ChordHotkeys.IsActionPressed(_config.ToggleReticleKey.Value, ChordHotkeys.FourthToggleLetter))
+            if (ChordHotkeys.IsActionPressed(_config.ToggleReticleKey, ChordHotkeys.FourthToggleLetter))
             {
                 OnToggleReticlePressed?.Invoke();
             }
