@@ -2,7 +2,7 @@
 bin/
 obj/
 
-# Game reference DLLs (users must copy from their game installation)
+# Reference DLLs staged by pixi run setup-libs
 src/ObraDinnHeadTracking/libs/
 
 # NuGet

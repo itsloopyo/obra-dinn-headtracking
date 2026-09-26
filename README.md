@@ -291,7 +291,10 @@ uninstall.cmd /force
 
 - [.NET SDK](https://dotnet.microsoft.com/download) (any recent version)
 - [pixi](https://pixi.sh) task runner
-- Return of the Obra Dinn installed (for Unity/BepInEx DLL references)
+
+The build needs no copy of the game: BepInEx comes from the vendored archive and the Unity
+references are stubs compiled from cameraunlock-core. The game is needed only to install the
+build into it with `pixi run install`.
 
 ### Build
 
