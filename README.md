@@ -113,6 +113,7 @@ Two equivalent binding sets - use whichever your keyboard has:
 |---------------------|-------------|-----------------|
 | Toggle tracking     | `End`       | `Ctrl+Shift+Y`  |
 | Cycle tracking mode | `Page Up`   | `Ctrl+Shift+G`  |
+| Toggle yaw mode     | `Page Down` | `Ctrl+Shift+H`  |
 
 `Page Up` / `Ctrl+Shift+G` cycles tracking mode:
 
@@ -121,13 +122,20 @@ Two equivalent binding sets - use whichever your keyboard has:
 3. Positional tracking only
 4. Back to both
 
-The mode you pick is saved to `CameraUnlock.ini` and is the mode the next start begins in.
-`End` turns head tracking on and off for this session only; whether it is on at the next start
-is the `EnableOnStartup` setting.
+`Page Down` / `Ctrl+Shift+H` switches how turning your head left and right moves the view:
+
+- **World-locked** (the default): the view turns around the world's up axis, so it stays level
+  while you look up or down with the mouse.
+- **Camera-local**: the view turns around the camera's own up axis, which tilts with the mouse's
+  up and down.
+
+The tracking mode and the yaw mode you pick are saved to `CameraUnlock.ini` and are what the next
+start begins with. `End` turns head tracking on and off for this session only; whether it is on at the
+next start is the `EnableOnStartup` setting.
 
 These are the default keys. Each action reads a list of keys from `CameraUnlock.ini`
-(`ToggleKey`, `CycleTrackingModeKey`), and any key in the list fires it, so you can add, rebind or
-remove any of them, the chords included.
+(`ToggleKey`, `CycleTrackingModeKey`, `YawModeKey`), and any key in the list fires it, so you can
+add, rebind or remove any of them, the chords included.
 
 The aim dot is drawn whenever head tracking is turning the view during gameplay. It has no
 toggle.
@@ -165,6 +173,7 @@ The built-in value of each setting set to `default` below:
 
 - `UdpPort=4242`
 - `EnableOnStartup=true`
+- `WorldSpaceYaw=true`
 - `RotationEnabled=true`
 - `LocalSmoothing=0.0`
 - `RemoteSmoothing=0.15`
@@ -177,6 +186,7 @@ The built-in value of each setting set to `default` below:
 - `TrackerPivotForward=0.0`
 - `ToggleKey=End, Ctrl+Shift+Y`
 - `CycleTrackingModeKey=PageUp, Ctrl+Shift+G`
+- `YawModeKey=PageDown, Ctrl+Shift+H`
 
 With every setting at its default, the file reads:
 
@@ -202,6 +212,8 @@ UdpPort=default
 [General]
 ; true: head tracking is on when the game starts. ToggleKey turns it on and off.
 EnableOnStartup=default
+; true: yaw turns around the world's up axis. false: around the camera's own up axis.
+WorldSpaceYaw=default
 ; true: turning your head turns the view.
 ; Tracking mode at startup, with PositionEnabled. The mode hotkey changes both.
 RotationEnabled=default
@@ -236,6 +248,8 @@ TrackerPivotForward=default
 ToggleKey=default
 ; Changes the tracking mode: rotation and position, rotation only, position only.
 CycleTrackingModeKey=default
+; Switches yaw between the world's up axis and the camera's own (WorldSpaceYaw).
+YawModeKey=default
 
 [Display]
 ; true: remove the game's 60 FPS cap. false: keep it.

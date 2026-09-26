@@ -14,6 +14,7 @@ namespace HeadTracking.Core
     {
         private readonly KeyBinding[] _toggle;
         private readonly KeyBinding[] _cycleTrackingMode;
+        private readonly KeyBinding[] _yawMode;
 
         /// <summary>
         /// Fired when toggle key is pressed.
@@ -26,10 +27,16 @@ namespace HeadTracking.Core
         /// </summary>
         public event Action OnCycleTrackingModePressed;
 
+        /// <summary>
+        /// Fired when the yaw mode key is pressed. Switches between world-locked and camera-local yaw.
+        /// </summary>
+        public event Action OnToggleYawModePressed;
+
         public InputHandler(ObraDinnConfig config, Action<string> logWarning)
         {
             _toggle = Parse("ToggleKey", config.ToggleKeyName, logWarning);
             _cycleTrackingMode = Parse("CycleTrackingModeKey", config.CycleTrackingModeKeyName, logWarning);
+            _yawMode = Parse("YawModeKey", config.YawModeKeyName, logWarning);
         }
 
         /// <summary>
@@ -45,6 +52,11 @@ namespace HeadTracking.Core
             if (KeyBindingInput.IsTriggered(_cycleTrackingMode))
             {
                 OnCycleTrackingModePressed?.Invoke();
+            }
+
+            if (KeyBindingInput.IsTriggered(_yawMode))
+            {
+                OnToggleYawModePressed?.Invoke();
             }
         }
 

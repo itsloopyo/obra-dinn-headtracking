@@ -27,6 +27,8 @@ namespace HeadTracking.Camera
         private float _lastTrackingYaw;
         private float _lastTrackingPitch;
         private float _lastTrackingRoll;
+        private float _lastGamePitch;
+        private Vector3 _lastWorldUp = Vector3.up;
         private Vec3 _lastTrackingPosition;
         private bool _wasApplyingTracking;
         private bool _isTransitioningOut;
@@ -60,18 +62,25 @@ namespace HeadTracking.Camera
         public bool RotationEnabled { get; set; } = true;
 
         /// <summary>
+        /// true: head yaw turns the view about the world's up axis, so it stays level while the
+        /// game pitches the camera. false: about the camera's own up axis, tilted with the pitch.
+        /// </summary>
+        public bool WorldSpaceYaw { get; set; } = true;
+
+        /// <summary>
         /// Whether tracking is currently being applied.
         /// </summary>
         public bool IsApplyingTracking => _wasApplyingTracking && !_isTransitioningOut;
 
-        /// <summary>The last applied tracking yaw in degrees.</summary>
-        public float LastTrackingYaw => _lastTrackingYaw;
-
-        /// <summary>The last applied tracking pitch in degrees.</summary>
-        public float LastTrackingPitch => _lastTrackingPitch;
-
-        /// <summary>The last applied tracking roll in degrees.</summary>
-        public float LastTrackingRoll => _lastTrackingRoll;
+        /// <summary>
+        /// Where the game aims, the camera's forward before head tracking, in the frame of the
+        /// camera as last tracked: x right, y up, z forward.
+        /// </summary>
+        public Vector3 AimInTrackedView()
+        {
+            Quaternion tracked = Compose(_lastGamePitch, _lastWorldUp, _lastTrackingYaw, _lastTrackingPitch, _lastTrackingRoll);
+            return Quaternion.Inverse(tracked) * (Quaternion.Euler(_lastGamePitch, 0f, 0f) * Vector3.forward);
+        }
 
         /// <summary>
         /// Gets the resolved gameplay camera (Player.instance.mainCamera, accounts for zoom FOV).
@@ -230,6 +239,8 @@ namespace HeadTracking.Camera
             _lastTrackingYaw = 0f;
             _lastTrackingPitch = 0f;
             _lastTrackingRoll = 0f;
+            _lastGamePitch = 0f;
+            _lastWorldUp = Vector3.up;
             _lastTrackingPosition = Vec3.Zero;
             _pendingPositionOffset = Vec3.Zero;
             _hasPendingPosition = false;
@@ -255,15 +266,33 @@ namespace HeadTracking.Camera
         /// <summary>
         /// Composes tracking rotation with the game's pitch and applies it to the camera.
         /// Camera is a child of the player body (which provides yaw), so local rotation
-        /// only contains the game's pitch. Head tracking is applied in camera-local space
-        /// so yaw always pans left/right regardless of game pitch.
+        /// only contains the game's pitch.
         /// </summary>
-        private static void ApplyComposedRotation(
+        private void ApplyComposedRotation(
             Transform cameraTransform, float gamePitchDeg,
             float yaw, float pitch, float roll)
         {
-            Quaternion headLocal = Quaternion.Euler(-pitch, yaw, roll);
-            cameraTransform.localRotation = Quaternion.Euler(gamePitchDeg, 0f, 0f) * headLocal;
+            // World up in the parent's frame, read from the transform so the camera needs no
+            // parent lookup: the parent's rotation is the world rotation without the local one.
+            Quaternion parentRotation = cameraTransform.rotation * Quaternion.Inverse(cameraTransform.localRotation);
+            _lastWorldUp = Quaternion.Inverse(parentRotation) * Vector3.up;
+            _lastGamePitch = gamePitchDeg;
+            cameraTransform.localRotation = Compose(gamePitchDeg, _lastWorldUp, yaw, pitch, roll);
+        }
+
+        /// <summary>
+        /// The camera's local rotation for a game pitch and a head pose. World-locked yaw turns
+        /// about <paramref name="worldUp"/> outside the game's pitch; camera-local yaw turns
+        /// inside it, about the pitched camera's up. Head pitch and roll are camera-local in both.
+        /// </summary>
+        private Quaternion Compose(float gamePitchDeg, Vector3 worldUp, float yaw, float pitch, float roll)
+        {
+            Quaternion gamePitch = Quaternion.Euler(gamePitchDeg, 0f, 0f);
+            if (WorldSpaceYaw)
+            {
+                return Quaternion.AngleAxis(yaw, worldUp) * gamePitch * Quaternion.Euler(-pitch, 0f, roll);
+            }
+            return gamePitch * Quaternion.Euler(-pitch, yaw, roll);
         }
 
         /// <summary>

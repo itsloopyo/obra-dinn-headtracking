@@ -26,11 +26,11 @@ namespace HeadTracking.Tests.Differential
         private const string OtherDefaults =
             "[CameraUnlock]\r\nConfigFormat=1\r\n\r\n" +
             "[Network]\r\nUdpPort=4343\r\n\r\n" +
-            "[General]\r\nEnableOnStartup=false\r\nRotationEnabled=true\r\n\r\n" +
+            "[General]\r\nEnableOnStartup=false\r\nWorldSpaceYaw=false\r\nRotationEnabled=true\r\n\r\n" +
             "[Smoothing]\r\nLocalSmoothing=0.25\r\nRemoteSmoothing=0.35\r\n\r\n" +
             "[Position]\r\nPositionEnabled=false\r\nPositionLimitX=0.26\r\nPositionLimitY=0.16\r\nPositionLimitYDown=0.17\r\n" +
             "PositionLimitZ=0.36\r\nPositionLimitZBack=0.06\r\nTrackerPivotForward=0.05\r\n\r\n" +
-            "[Hotkeys]\r\nToggleKey=F8\r\nCycleTrackingModeKey=F7\r\n";
+            "[Hotkeys]\r\nToggleKey=F8\r\nCycleTrackingModeKey=F7\r\nYawModeKey=F6\r\n";
 
         // A v1.3.0 .cfg can hold a number for a key, which BepInEx's enum parse accepts and Unity
         // names no key for. No hotkey list can hold it and no approved rule drops it, so the owner

@@ -22,6 +22,7 @@ namespace HeadTracking.Config
             return HeadTrackingConfigTable.Create<ObraDinnConfig>(
                     ConfigConcepts.UdpPort,
                     ConfigConcepts.EnableOnStartup,
+                    ConfigConcepts.WorldSpaceYaw,
                     ConfigConcepts.RotationEnabled,
                     ConfigConcepts.LocalSmoothing,
                     ConfigConcepts.RemoteSmoothing,
@@ -33,7 +34,9 @@ namespace HeadTracking.Config
                     ConfigConcepts.PositionLimitZBack,
                     ConfigConcepts.TrackerPivotForward,
                     ConfigConcepts.ToggleKey,
-                    ConfigConcepts.CycleTrackingModeKey)
+                    ConfigConcepts.CycleTrackingModeKey,
+                    ConfigConcepts.YawModeKey)
+                .Select(ConfigConcepts.WorldSpaceYaw).Writable()
                 .Select(ConfigConcepts.RotationEnabled).Writable()
                 .Select(ConfigConcepts.PositionEnabled).Writable()
                 .Select(ConfigConcepts.TrackerPivotForward)

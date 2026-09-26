@@ -12,7 +12,7 @@ namespace HeadTracking.Tests
 {
     /// <summary>
     /// The committed config is the table's fresh render byte for byte, and the owner writes the
-    /// file only through the rows the tracking mode cycle persists.
+    /// file only through the rows the tracking mode cycle and the yaw mode toggle persist.
     /// <c>pixi run render-config</c> sets CAMERAUNLOCK_RENDER_CONFIG=write to rewrite the committed
     /// file after a change to a row, a comment or a default.
     /// </summary>
@@ -57,7 +57,7 @@ namespace HeadTracking.Tests
             var config = new ObraDinnConfig();
             ObraDinnConfig.Table().Apply(CanonicalIni.Parse(new byte[0]), config);
 
-            foreach (string list in new[] { config.ToggleKeyName, config.CycleTrackingModeKeyName })
+            foreach (string list in new[] { config.ToggleKeyName, config.CycleTrackingModeKeyName, config.YawModeKeyName })
             {
                 KeyBinding[] bindings;
                 string error;
@@ -66,6 +66,7 @@ namespace HeadTracking.Tests
             }
             Assert.Equal("End, Ctrl+Shift+Y", config.ToggleKeyName);
             Assert.Equal("PageUp, Ctrl+Shift+G", config.CycleTrackingModeKeyName);
+            Assert.Equal("PageDown, Ctrl+Shift+H", config.YawModeKeyName);
         }
 
         [Fact]
@@ -77,6 +78,7 @@ namespace HeadTracking.Tests
             Assert.Equal(TrackingMode.RotationAndPosition,
                 TrackingModeChannels.Decode(config.RotationEnabled, config.PositionEnabled));
             Assert.True(config.EnableOnStartup);
+            Assert.True(config.WorldSpaceYaw);
             Assert.Equal(4242, config.UdpPort);
             Assert.Equal(0.0f, config.LocalSmoothing);
             Assert.Equal(0.15f, config.RemoteSmoothing);
@@ -118,14 +120,40 @@ namespace HeadTracking.Tests
                 string text = File.ReadAllText(defaults);
                 Assert.Contains("UdpPort=4242", text);
                 Assert.Contains("TrackerPivotForward=0.0", text);
+                Assert.Contains("WorldSpaceYaw=true", text);
                 File.WriteAllText(defaults, text.Replace("UdpPort=4242", "UdpPort=4343")
-                    .Replace("TrackerPivotForward=0.0", "TrackerPivotForward=0.08"));
+                    .Replace("TrackerPivotForward=0.0", "TrackerPivotForward=0.08")
+                    .Replace("WorldSpaceYaw=true", "WorldSpaceYaw=false"));
 
                 ConfigLoadResult<ObraDinnConfig> next = Owner(dir.Path).Load();
 
                 Assert.Equal(ConfigLoadStatus.Canonical, next.Status);
                 Assert.Equal(4343, next.Config.UdpPort);
                 Assert.Equal(0.08f, next.Config.TrackerPivotForward);
+                Assert.False(next.Config.WorldSpaceYaw);
+            }
+        }
+
+        [Fact]
+        public void TheYawToggleSavesOnlyItsRowAndItComesBack()
+        {
+            using (var dir = new TempDir())
+            {
+                string path = Path.Combine(dir.Path, FileName);
+                ConfigOwner<ObraDinnConfig> owner = Owner(dir.Path);
+                owner.Load();
+                string[] created = File.ReadAllLines(path);
+                byte[] defaultsBytes = File.ReadAllBytes(DefaultsPath(dir.Path));
+                Assert.Contains("WorldSpaceYaw=default", created);
+
+                ConfigSaveResult saved = owner.Save(c => c.WorldSpaceYaw = false);
+                Assert.Equal(ConfigSaveStatus.Saved, saved.Status);
+                AssertOnlyChanged(created, File.ReadAllLines(path), "WorldSpaceYaw=false");
+                Assert.True(File.ReadAllBytes(DefaultsPath(dir.Path)).SequenceEqual(defaultsBytes));
+
+                ConfigLoadResult<ObraDinnConfig> next = Owner(dir.Path).Load();
+                Assert.Equal(ConfigLoadStatus.Canonical, next.Status);
+                Assert.False(next.Config.WorldSpaceYaw);
             }
         }
 
@@ -177,7 +205,7 @@ namespace HeadTracking.Tests
         public void TheFileHasNoRowTheModDoesNotUse()
         {
             string text = Encoding.ASCII.GetString(File.ReadAllBytes(Committed()));
-            foreach (string gone in new[] { "Sensitivity", "Reticle", "WorldSpaceYaw", "YawModeKey", "TrueFreeLook", "Collision", "Light" })
+            foreach (string gone in new[] { "Sensitivity", "Reticle", "TrueFreeLook", "Collision", "Light" })
             {
                 Assert.DoesNotContain(gone, text);
             }

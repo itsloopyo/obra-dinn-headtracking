@@ -32,7 +32,9 @@ namespace HeadTracking.Tests.Differential
                 {
                     return new ImportOutcome { Error = LegacyOutcome.ErrorOf(e) };
                 }
+                // As the owner seeds it: the table's built-in values on the rows the map leaves alone.
                 var config = new ObraDinnConfig();
+                ObraDinnConfig.Table().Apply(CanonicalIni.Parse(new byte[0]), config);
                 ImportResult result = LegacyConfigImport.Run(file, new LegacyImportInput(folder.LegacyPath), config);
                 return new ImportOutcome { Result = result, Config = config };
             }
@@ -167,6 +169,7 @@ namespace HeadTracking.Tests.Differential
             Action<string, string> line = (name, value) => s.Append(name).Append('=').Append(value).Append('\n');
             line("UdpPort", c.UdpPort.ToString(CultureInfo.InvariantCulture));
             line("EnableOnStartup", LegacyStartup.Text(c.EnableOnStartup));
+            line("WorldSpaceYaw", LegacyStartup.Text(c.WorldSpaceYaw));
             line("RotationEnabled", LegacyStartup.Text(c.RotationEnabled));
             line("PositionEnabled", LegacyStartup.Text(c.PositionEnabled));
             line("LocalSmoothing", LegacyStartup.Text(c.LocalSmoothing));
@@ -181,6 +184,7 @@ namespace HeadTracking.Tests.Differential
             line("TrackerPivotForward", LegacyStartup.Text(c.TrackerPivotForward));
             line("ToggleKey", c.ToggleKeyName);
             line("CycleTrackingModeKey", c.CycleTrackingModeKeyName);
+            line("YawModeKey", c.YawModeKeyName);
             line("UnlockFramerate", LegacyStartup.Text(c.UnlockFramerate));
             line("ShowStartupNotification", LegacyStartup.Text(c.ShowStartupNotification));
             line("ShowConnectionNotifications", LegacyStartup.Text(c.ShowConnectionNotifications));

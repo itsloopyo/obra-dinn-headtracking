@@ -9,7 +9,6 @@ using CameraUnlock.Core.Data;
 using CameraUnlock.Core.Processing;
 using CameraUnlock.Core.Protocol;
 using CameraUnlock.Core.Tracking;
-using CameraUnlock.Core.Unity.Extensions;
 using CameraUnlock.Core.Unity.Rendering;
 using CameraUnlock.Core.Unity.UI;
 using HeadTracking.Camera;
@@ -72,6 +71,8 @@ namespace HeadTracking.Core
 
         private const float ConfigNotificationSeconds = 8f;
 
+        private const float AimProjectionEpsilon = 1e-6f;
+
 
         private void Awake()
         {
@@ -125,6 +126,7 @@ namespace HeadTracking.Core
             _cameraController = new CameraController(
                 _receiver, _processor, _interpolator,
                 _positionProcessor, _positionInterpolator);
+            _cameraController.WorldSpaceYaw = _config.WorldSpaceYaw;
             _gameStateDetector = new GameStateDetector();
             _inputHandler = new InputHandler(_config, msg => Logger.LogWarning(msg));
 
@@ -148,6 +150,7 @@ namespace HeadTracking.Core
             // Subscribe to input events
             _inputHandler.OnTogglePressed += HandleToggle;
             _inputHandler.OnCycleTrackingModePressed += HandleCycleTrackingMode;
+            _inputHandler.OnToggleYawModePressed += HandleToggleYawMode;
 
             // Subscribe to game state changes
             _gameStateDetector.StateChanged += OnGameStateChanged;
@@ -174,7 +177,7 @@ namespace HeadTracking.Core
             // startup toast would replace it.
             if (_config.ShowStartupNotification && !_notificationUI.IsDisplaying)
             {
-                string keyInfo = $"[{_config.ToggleKeyName}] Toggle, [{_config.CycleTrackingModeKeyName}] Cycle Mode";
+                string keyInfo = $"[{_config.ToggleKeyName}] Toggle, [{_config.CycleTrackingModeKeyName}] Cycle Mode, [{_config.YawModeKeyName}] Yaw";
                 string statusInfo = TrackingEnabled ? "Head Tracking: ON" : "Head Tracking: OFF";
                 _notificationUI.ShowNotification($"{statusInfo}\n{keyInfo}", 4f);
             }
@@ -233,6 +236,7 @@ namespace HeadTracking.Core
             // Unsubscribe from events
             _inputHandler.OnTogglePressed -= HandleToggle;
             _inputHandler.OnCycleTrackingModePressed -= HandleCycleTrackingMode;
+            _inputHandler.OnToggleYawModePressed -= HandleToggleYawMode;
             _gameStateDetector.StateChanged -= OnGameStateChanged;
             CameraPatches.OnSceneLoaded -= OnSceneLoadedPatch;
             CameraPatches.OnCameraChanged -= OnCameraChangedPatch;
@@ -293,6 +297,16 @@ namespace HeadTracking.Core
                 c.RotationEnabled = rotation;
                 c.PositionEnabled = position;
             });
+        }
+
+        private void HandleToggleYawMode()
+        {
+            _cameraController.WorldSpaceYaw = !_cameraController.WorldSpaceYaw;
+            bool worldSpaceYaw = _cameraController.WorldSpaceYaw;
+            _notificationUI.ShowNotification(worldSpaceYaw ? "Yaw: World-locked" : "Yaw: Camera-local",
+                NotificationType.Info, 1.5f);
+            Logger.LogInfo("Yaw mode: " + (worldSpaceYaw ? "world-locked" : "camera-local"));
+            SaveConfig(c => c.WorldSpaceYaw = worldSpaceYaw);
         }
 
         private void ApplyTrackingMode()
@@ -387,8 +401,9 @@ namespace HeadTracking.Core
         /// <summary>
         /// Calculates the screen offset for the aim reticle based on current head tracking rotation.
         /// The reticle shows where you're aiming (mouse direction) vs where you're looking (head direction).
-        /// With camera-local composition, gamePitch cancels out - the offset depends only on
-        /// the head tracking rotation.
+        /// The aim is projected through the tracked camera's field of view, as ScreenOffsetCalculator
+        /// projects it. With world-locked yaw the offset depends on the game's pitch as well, which
+        /// the head-pose angles alone cannot give.
         /// </summary>
         private UnityEngine.Vector2 CalculateAimOffset()
         {
@@ -398,12 +413,17 @@ namespace HeadTracking.Core
                 return UnityEngine.Vector2.zero;
             }
 
-            // Pitch is negated to match ApplyComposedRotation's Euler(-pitch, yaw, roll) convention.
-            return UnityAimHelper.ComputeScreenOffsetFOV(
-                _cameraController.LastTrackingYaw,
-                -_cameraController.LastTrackingPitch,
-                _cameraController.LastTrackingRoll,
-                cam);
+            UnityEngine.Vector3 aim = _cameraController.AimInTrackedView();
+            float tanHalfFovY = UnityEngine.Mathf.Tan(cam.fieldOfView * 0.5f * UnityEngine.Mathf.Deg2Rad);
+            float tanHalfFovX = tanHalfFovY * cam.aspect;
+            // Behind the view plane the divide mirrors the offset, so the dot stays centred.
+            if (aim.z < AimProjectionEpsilon || tanHalfFovY < AimProjectionEpsilon || tanHalfFovX < AimProjectionEpsilon)
+            {
+                return UnityEngine.Vector2.zero;
+            }
+            return new UnityEngine.Vector2(
+                aim.x / aim.z / tanHalfFovX * UnityEngine.Screen.width * 0.5f,
+                aim.y / aim.z / tanHalfFovY * UnityEngine.Screen.height * 0.5f);
         }
 
         private void OnGameStateChanged(GameState newState)
