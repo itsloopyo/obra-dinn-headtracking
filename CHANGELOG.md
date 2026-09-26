@@ -7,18 +7,6 @@
 - give the forward lean its own travel budget again
 - remove mod-side centring, log connection changes unconditionally
 - harden the release pin sync and announce steps
-
-## [1.2.1] - 2026-08-18
-
-### Fixed
-
-- migrate to the per-connection smoothing pair
-- match stub member kinds to the shipped Unity assemblies
-
-## [Unreleased]
-
-### Fixed
-
 - Log `OpenTrack connection established` / `lost` regardless of the on-screen
   notification setting. It is the only evidence in `BepInEx/LogOutput.log` that
   tracker packets ever arrived, and a user who had turned notifications off sent
@@ -31,6 +19,16 @@
   gone, and the mod now applies the tracker pose as absolute. Every tracker
   centres itself, so a centre in the mod was a second centre in series with the
   tracker's own and the two drifted apart. Centre your view in your tracker app.
+
+## [1.2.1] - 2026-08-18
+
+### Fixed
+
+- migrate to the per-connection smoothing pair
+- match stub member kinds to the shipped Unity assemblies
+
+### Changed
+
 - Replace the single `Smoothing` config key with `LocalSmoothing` (default 0.0) and `RemoteSmoothing` (default 0.15), selected per connection from the packet source address
 - Remove the `PositionSmoothing` key: position now uses the same connection-selected value as rotation
 - Remove the hidden 0.15 baseline smoothing floor, so local trackers get zero-latency tracking by default
