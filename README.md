@@ -2,20 +2,13 @@
 
 ![Return of the Obra Dinn running with this mod](https://raw.githubusercontent.com/itsloopyo/obra-dinn-headtracking/main/assets/readme-clip.gif)
 
-An unofficial head tracking mod for Return of the Obra Dinn that moves the view with your head while your mouse or controller keeps aiming, driven by OpenTrack over UDP, with no VR headset required.
-
-> **Settings have moved.** This version keeps its settings in `BepInEx\config\CameraUnlock.ini`.
-> The first time it starts it reads your settings from the old
-> `BepInEx\config\com.headtracking.obradinn.cfg` into the new file, and leaves the old file as
-> it was. BepInEx's ConfigurationManager no longer lists the settings: edit `CameraUnlock.ini`
-> with any text editor. [Configuration](#configuration) has the details.
+An unofficial head tracking mod for Return of the Obra Dinn that moves the view with your head while your mouse or controller keeps aiming, driven by a webcam, phone, or any OpenTrack compatible tracker, with no VR headset required.
 
 ## Features
 
 - **Decoupled look + aim**: Look around freely with your head while your aim stays independent
 - **6DOF head tracking**: Full rotation (yaw, pitch, roll) and positional tracking via OpenTrack UDP protocol
 - **Works with any OpenTrack compatible tracker** - free options available for PC, iOS and Android
-- **Framerate unlock**: Optional removal of the game's 60 FPS cap for smoother tracking
 
 ## Requirements
 
@@ -291,9 +284,8 @@ Download the new release and run `install.cmd` again.
 
 ## Uninstalling
 
-Run `uninstall.cmd` from the release folder. This removes the mod DLLs and leaves your settings,
-`BepInEx\config\CameraUnlock.ini` and the old `BepInEx\config\com.headtracking.obradinn.cfg`, in
-place. BepInEx is only removed if it was originally installed by this mod. To force-remove BepInEx:
+Run `uninstall.cmd` from the release folder. This removes the mod DLLs and leaves your settings in
+`BepInEx\config\CameraUnlock.ini`. BepInEx is only removed if it was originally installed by this mod. To force-remove BepInEx:
 
 ```
 uninstall.cmd /force
