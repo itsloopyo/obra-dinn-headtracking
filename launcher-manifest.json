@@ -45,5 +45,14 @@
                              ],
     "dependencies":  [
 
-                     ]
+                     ],
+    "config":  {
+                   "path":  "BepInEx/config/CameraUnlock.ini",
+                   "anchor":  "game_root",
+                   "legacy_source":  "BepInEx/config/com.headtracking.obradinn.cfg",
+                   "canonical_since":  "1.4.0",
+                   "per_game":  {
+
+                                }
+               }
 }
