@@ -29,7 +29,7 @@ namespace HeadTracking.Tests.Differential
             "[General]\r\nEnableOnStartup=false\r\nWorldSpaceYaw=false\r\nRotationEnabled=true\r\n\r\n" +
             "[Smoothing]\r\nLocalSmoothing=0.25\r\nRemoteSmoothing=0.35\r\n\r\n" +
             "[Position]\r\nPositionEnabled=false\r\nPositionLimitX=0.26\r\nPositionLimitY=0.16\r\nPositionLimitYDown=0.17\r\n" +
-            "PositionLimitZ=0.36\r\nPositionLimitZBack=0.06\r\nTrackerPivotForward=0.05\r\n\r\n" +
+            "PositionLimitZ=0.36\r\nPositionLimitZBack=0.06\r\n\r\n" +
             "[Hotkeys]\r\nToggleKey=F8\r\nCycleTrackingModeKey=F7\r\nYawModeKey=F6\r\n";
 
         // A v1.3.0 .cfg can hold a number for a key, which BepInEx's enum parse accepts and Unity
@@ -76,6 +76,8 @@ namespace HeadTracking.Tests.Differential
             var refused = new ConcurrentBag<string>();
             var created = new ConcurrentDictionary<string, byte[]>(StringComparer.Ordinal);
             byte[] committed = File.ReadAllBytes(ConfigTests.Committed());
+            // What `default` gives on every row over this Defaults.ini.
+            string fresh = MigrationOutcome.Describe(MigrationOutcome.Run(inputs.Single(i => i.Bytes == null), defaultsIni, false).Config);
             Parallel.ForEach(inputs, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, input =>
             {
                 ImportOutcome import = ImportOutcome.Run(input);
@@ -91,20 +93,15 @@ namespace HeadTracking.Tests.Differential
                         continue;
                     }
 
-                    string imported = MigrationOutcome.Describe(import.Config);
+                    // The rows the import leaves to Defaults.ini hold what `default` gives; every
+                    // other row holds what the import read.
+                    string imported = FollowDefaults(MigrationOutcome.Describe(import.Config), fresh, import.Result.FollowsDefaultsIni);
                     string migrated = MigrationOutcome.Describe(migration.Config);
                     if (input.Bytes == null)
                     {
                         if (migration.Status != ConfigLoadStatus.Created) failures.Add(name + ": " + migration.Status);
                         if (!migration.Created.SequenceEqual(committed)) failures.Add(name + ": the created file is not config/CameraUnlock.ini");
-                        // The no-file input of the one moved default: v1.3.0 ran on 0.08 without a
-                        // file, and a new CameraUnlock.ini takes TrackerPivotForward from Defaults.ini.
-                        if (defaultsIni == null)
-                        {
-                            string expected = imported.Replace("TrackerPivotForward=0.08/0x3DA3D70A", "TrackerPivotForward=0/0x00000000");
-                            if (expected == imported) failures.Add(name + ": the import without a file does not give 0.08");
-                            if (expected != migrated) failures.Add(name + ":\n" + Diff(expected, migrated));
-                        }
+                        if (imported != migrated) failures.Add(name + ":\n" + Diff(imported, migrated));
                         continue;
                     }
 
@@ -121,6 +118,12 @@ namespace HeadTracking.Tests.Differential
                     else
                     {
                         created[Sha256(migration.Created)] = migration.Created;
+                        string text = Encoding.ASCII.GetString(migration.Created);
+                        foreach (ConceptDescriptor concept in import.Result.FollowsDefaultsIni)
+                        {
+                            if (!text.Contains("\r\n" + concept.Key + "=default\r\n"))
+                                failures.Add(name + ": " + concept.Key + " follows Defaults.ini and is not written default");
+                        }
                     }
                     if (imported != migrated) failures.Add(name + ":\n" + Diff(imported, migrated));
                 }
@@ -164,10 +167,18 @@ namespace HeadTracking.Tests.Differential
                 // values are what the runtime applies now, so they must equal what v1.3.0 applied.
                 bool rotationDropped = result.Dropped.Any(d => d.Rule == DropRule.PoseShaping && d.Section == "Sensitivity");
                 bool positionDropped = result.Dropped.Any(d => d.Rule == DropRule.PoseShaping && d.Section == "Position");
+                bool pivotDropped = result.Dropped.Any(d => d.Rule == DropRule.TrackerPivot);
                 foreach (string key in before.Keys)
                 {
                     if (key == "RotationSensitivity" && rotationDropped) continue;
                     if (key == "PositionSensitivity" && positionDropped) continue;
+                    if (key == "TrackerPivotForward" && pivotDropped) continue;
+                    if (result.Dropped.Any(d => d.Rule == DropRule.ModifierKey && d.Key == key))
+                    {
+                        string chord = key == "ToggleKey" ? "Ctrl+Shift+Y" : "Ctrl+Shift+G";
+                        if (after[key] != chord) failures.Add(input.Name + ": " + key + " " + before[key] + " -> " + after[key]);
+                        continue;
+                    }
                     if (key == "ReticleVisible" || key == "ReticleToggleKey") continue;
                     if (before[key] != after[key]) failures.Add(input.Name + ": " + key + " " + before[key] + " -> " + after[key]);
                 }
@@ -181,8 +192,10 @@ namespace HeadTracking.Tests.Differential
                     expectedShaping.Add(section + " " + key + " " + Codec(value) + " " + Codec(shipped) + " " + folded);
                     if (!folded) expectedDrops.Add("PoseShaping " + section + " " + key + " " + Codec(value));
                 };
+                if (IsModifier(old.ToggleKey)) expectedDrops.Add("ModifierKey Keybindings ToggleKey " + old.ToggleKey);
+                if (IsModifier(old.CycleTrackingModeKey)) expectedDrops.Add("ModifierKey Keybindings CycleTrackingModeKey " + old.CycleTrackingModeKey);
                 if (old.ToggleReticleKey != UnityEngine.KeyCode.None)
-                    expectedDrops.Add("Reticle Keybindings ToggleReticleKey " + LegacyStartup.KeyName((int)old.ToggleReticleKey));
+                    expectedDrops.Add("Reticle Keybindings ToggleReticleKey " + old.ToggleReticleKey);
                 if (!old.ShowReticle) expectedDrops.Add("Reticle UI ShowReticle false");
                 shaping("Sensitivity", "YawSensitivity", old.YawSensitivity, 1.0f);
                 shaping("Sensitivity", "PitchSensitivity", old.PitchSensitivity, 1.0f);
@@ -190,6 +203,29 @@ namespace HeadTracking.Tests.Differential
                 shaping("Position", "PositionSensitivityX", old.PositionSensitivityX, 2.0f);
                 shaping("Position", "PositionSensitivityY", old.PositionSensitivityY, 2.0f);
                 shaping("Position", "PositionSensitivityZ", old.PositionSensitivityZ, 2.0f);
+                if (old.TrackerPivotForward != 0.08f) expectedDrops.Add("TrackerPivot Position TrackerPivotForward " + Codec(old.TrackerPivotForward));
+
+                // A setting left at v1.3.0's default is no player's choice and follows
+                // Defaults.ini. The tracking mode is one unit, and WorldSpaceYaw and YawModeKey had
+                // no setting in any published build.
+                var expectedFollows = new List<string> { "WorldSpaceYaw", "YawModeKey" };
+                Action<string, bool> follows = (key, unchanged) => { if (unchanged) expectedFollows.Add(key); };
+                follows("UdpPort", old.UDPPort == 4242);
+                follows("EnableOnStartup", old.EnabledOnStartup);
+                follows("RotationEnabled", old.PositionEnabled);
+                follows("PositionEnabled", old.PositionEnabled);
+                follows("LocalSmoothing", old.LocalSmoothing == 0.0f);
+                follows("RemoteSmoothing", old.RemoteSmoothing == 0.15f);
+                follows("PositionLimitX", old.PositionLimitX == 0.30f);
+                follows("PositionLimitY", old.PositionLimitY == 0.20f);
+                follows("PositionLimitYDown", old.PositionLimitY == 0.20f);
+                follows("PositionLimitZ", old.PositionLimitZ == 0.40f);
+                follows("PositionLimitZBack", old.PositionLimitZBack == 0.10f);
+                follows("ToggleKey", old.ToggleKey == UnityEngine.KeyCode.End);
+                follows("CycleTrackingModeKey", old.CycleTrackingModeKey == UnityEngine.KeyCode.PageUp);
+                string[] followed = result.FollowsDefaultsIni.Select(c => c.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray();
+                if (!followed.SequenceEqual(expectedFollows.OrderBy(k => k, StringComparer.Ordinal)))
+                    failures.Add(input.Name + ": follows Defaults.ini " + string.Join(", ", followed));
 
                 string[] drops = result.Dropped.Select(d => d.Rule + " " + d.Section + " " + d.Key + " " + d.Value).ToArray();
                 string[] poses = result.PoseShaping.Select(p => p.Section + " " + p.Key + " " + p.Value + " " + p.Shipped + " " + p.Folded).ToArray();
@@ -216,20 +252,25 @@ namespace HeadTracking.Tests.Differential
         }
 
         /// <summary>
-        /// Fresh equals upgrade: the newest published build's first-run file migrates, over the
-        /// built-in Defaults.ini, into the committed file but for the one moved default.
+        /// Fresh equals upgrade: every published build's first-run file holds only what that build
+        /// shipped, so it migrates into the committed file, every global row `default`, over the
+        /// built-in Defaults.ini and over one that differs on every row.
         /// </summary>
         [Fact]
-        public void TheNewestFirstRunMigratesToTheCommittedFileButThePivot()
+        public void EveryFirstRunMigratesToTheCommittedFile()
         {
-            MigrationOutcome migration = MigrationOutcome.Run(
-                new DifferentialInput("first run v1.3.0", Inputs.NewestFirstRun()), null, false);
-
-            Assert.Equal(ConfigLoadStatus.Migrated, migration.Status);
-            string committed = Encoding.ASCII.GetString(File.ReadAllBytes(ConfigTests.Committed()));
-            Assert.Equal(committed.Replace("TrackerPivotForward=default", "TrackerPivotForward=0.08"),
-                Encoding.ASCII.GetString(migration.Created));
-            Assert.Contains(migration.Log, l => l.Contains("not carried: [Keybindings] ToggleReticleKey=PageDown"));
+            byte[] committed = File.ReadAllBytes(ConfigTests.Committed());
+            foreach (DifferentialInput input in Inputs.FirstRuns())
+            {
+                foreach (string defaultsIni in new[] { null, OtherDefaults })
+                {
+                    MigrationOutcome migration = MigrationOutcome.Run(input, defaultsIni, false);
+                    Assert.Equal(ConfigLoadStatus.Migrated, migration.Status);
+                    Assert.True(migration.Created.SequenceEqual(committed), input.Name + ":\n" + Encoding.ASCII.GetString(migration.Created));
+                }
+            }
+            MigrationOutcome newest = MigrationOutcome.Run(new DifferentialInput("first run v1.3.0", Inputs.NewestFirstRun()), null, false);
+            Assert.Contains(newest.Log, l => l.Contains("not carried: [Keybindings] ToggleReticleKey=PageDown"));
         }
 
         /// <summary>Every KeyCode a .cfg can name converts to the key name that reads back as it.</summary>
@@ -245,14 +286,51 @@ namespace HeadTracking.Tests.Differential
             Assert.True(codes.Count > 300, "keys.json gave " + codes.Count + " Unity codes");
             foreach (int code in codes.Where(c => c != 0))
             {
-                string list = LegacyConfigImport.HotkeyList((UnityEngine.KeyCode)code, UnityEngine.KeyCode.Y);
+                var dropped = new List<DroppedValue>();
+                string list = LegacyConfigImport.HotkeyList((UnityEngine.KeyCode)code, UnityEngine.KeyCode.Y, "ToggleKey", dropped);
+                if (IsModifier((UnityEngine.KeyCode)code))
+                {
+                    // N3: a Ctrl, Shift or Alt key alone is unbound and dropped, and the chord stays.
+                    Assert.Equal("Ctrl+Shift+Y", list);
+                    Assert.Equal(new[] { "ModifierKey Keybindings ToggleKey " + (UnityEngine.KeyCode)code },
+                        dropped.Select(d => d.Rule + " " + d.Section + " " + d.Key + " " + d.Value));
+                    continue;
+                }
                 KeyBinding[] bindings;
                 string error;
                 Assert.True(KeyBindings.TryParse(list, out bindings, out error), code + ": " + list + ": " + error);
                 Assert.Equal(new KeyBinding(KeyModifiers.None, code), bindings[0]);
                 Assert.Equal(new KeyBinding(KeyModifiers.Ctrl | KeyModifiers.Shift, (int)UnityEngine.KeyCode.Y), bindings[1]);
+                Assert.Empty(dropped);
             }
-            Assert.Equal("Ctrl+Shift+G", LegacyConfigImport.HotkeyList(UnityEngine.KeyCode.None, UnityEngine.KeyCode.G));
+            Assert.Equal("Ctrl+Shift+G", LegacyConfigImport.HotkeyList(UnityEngine.KeyCode.None, UnityEngine.KeyCode.G, "CycleTrackingModeKey", new List<DroppedValue>()));
+        }
+
+        private static bool IsModifier(UnityEngine.KeyCode code)
+        {
+            return code >= UnityEngine.KeyCode.RightShift && code <= UnityEngine.KeyCode.LeftAlt;
+        }
+
+        /// <summary>
+        /// <paramref name="imported"/> with each line of a row named in
+        /// <paramref name="followsDefaultsIni"/> taken from <paramref name="fresh"/>.
+        /// </summary>
+        private static string FollowDefaults(string imported, string fresh, IEnumerable<ConceptDescriptor> followsDefaultsIni)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (ConceptDescriptor concept in followsDefaultsIni)
+            {
+                names.Add(concept.Key);
+                if (concept == ConfigConcepts.LocalSmoothing || concept == ConfigConcepts.RemoteSmoothing) names.Add("Position." + concept.Key);
+            }
+            string[] freshLines = fresh.Split('\n');
+            string[] lines = imported.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string name = lines[i].Split('=')[0];
+                if (names.Contains(name)) lines[i] = freshLines.Single(l => l.Split('=')[0] == name);
+            }
+            return string.Join("\n", lines);
         }
 
         private static string Codec(float value)

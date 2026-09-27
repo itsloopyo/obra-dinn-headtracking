@@ -32,16 +32,12 @@ namespace HeadTracking.Config
                     ConfigConcepts.PositionLimitYDown,
                     ConfigConcepts.PositionLimitZ,
                     ConfigConcepts.PositionLimitZBack,
-                    ConfigConcepts.TrackerPivotForward,
                     ConfigConcepts.ToggleKey,
                     ConfigConcepts.CycleTrackingModeKey,
                     ConfigConcepts.YawModeKey)
                 .Select(ConfigConcepts.WorldSpaceYaw).Writable()
                 .Select(ConfigConcepts.RotationEnabled).Writable()
                 .Select(ConfigConcepts.PositionEnabled).Writable()
-                .Select(ConfigConcepts.TrackerPivotForward)
-                .Comment("Metres from the pivot of your neck forward to the point the tracker follows.\n" +
-                         "Used to remove the lean that turning your head adds. 0 turns it off.")
                 .Local("Display", "UnlockFramerate", c => c.UnlockFramerate, (c, v) => c.UnlockFramerate = v,
                     new BoolCodec(),
                     "true: remove the game's 60 FPS cap. false: keep it.")

@@ -42,8 +42,11 @@ namespace HeadTracking.Legacy
             LegacyConfig legacy = LegacyConfigReader.Read(pluginConfig, out found);
             var dropped = new List<DroppedValue>();
             var poseShaping = new List<PoseShapingValue>();
-            Map(legacy, config, dropped, poseShaping);
-            return found ? ImportResult.Imported(dropped, poseShaping) : ImportResult.Absent(dropped, poseShaping);
+            var followsDefaultsIni = new LegacyFollowsDefaultsIni();
+            Map(legacy, config, dropped, poseShaping, followsDefaultsIni);
+            return found
+                ? ImportResult.Imported(dropped, poseShaping, followsDefaultsIni.Concepts)
+                : ImportResult.Absent(dropped, poseShaping, followsDefaultsIni.Concepts);
         }
 
         /// <summary>
@@ -51,22 +54,24 @@ namespace HeadTracking.Legacy
         /// NaN and infinity into, so no value reaches here that normalisation N2 would change.
         /// </summary>
         public static void Map(LegacyConfig legacy, ObraDinnConfig config, List<DroppedValue> dropped,
-            List<PoseShapingValue> poseShaping)
+            List<PoseShapingValue> poseShaping, LegacyFollowsDefaultsIni followsDefaultsIni)
         {
+            var shipped = new LegacyConfig();
+
             config.EnableOnStartup = legacy.EnabledOnStartup;
             config.ShowStartupNotification = legacy.ShowStartupNotification;
             config.UnlockFramerate = legacy.UnlockFramerate;
             config.ShowConnectionNotifications = legacy.ShowConnectionNotifications;
             config.UdpPort = legacy.UDPPort;
 
-            config.ToggleKeyName = HotkeyList(legacy.ToggleKey, KeyCode.Y);
-            config.CycleTrackingModeKeyName = HotkeyList(legacy.CycleTrackingModeKey, KeyCode.G);
+            config.ToggleKeyName = HotkeyList(legacy.ToggleKey, KeyCode.Y, "ToggleKey", dropped);
+            config.CycleTrackingModeKeyName = HotkeyList(legacy.CycleTrackingModeKey, KeyCode.G, "CycleTrackingModeKey", dropped);
 
             // The reticle toggle is gone for everyone who had it bound. ShowReticle=true is what
             // the mod still does, so only a player who had hidden the reticle loses a choice.
             if (legacy.ToggleReticleKey != KeyCode.None)
             {
-                dropped.Add(new DroppedValue(DropRule.Reticle, "Keybindings", "ToggleReticleKey", KeyText((int)legacy.ToggleReticleKey)));
+                dropped.Add(new DroppedValue(DropRule.Reticle, "Keybindings", "ToggleReticleKey", legacy.ToggleReticleKey.ToString()));
             }
             if (!legacy.ShowReticle)
             {
@@ -96,32 +101,44 @@ namespace HeadTracking.Legacy
                 legacy.LocalSmoothing, legacy.RemoteSmoothing,
                 p.InvertX, p.InvertY, p.InvertZ);
 
-            config.TrackerPivotForward = legacy.TrackerPivotForward;
+            LegacyTrackerPivot.Record(legacy.TrackerPivotForward, shipped.TrackerPivotForward, "Position", "TrackerPivotForward", dropped);
+
+            followsDefaultsIni.Setting(ConfigConcepts.UdpPort, legacy.UDPPort, shipped.UDPPort);
+            followsDefaultsIni.Setting(ConfigConcepts.EnableOnStartup, legacy.EnabledOnStartup, shipped.EnabledOnStartup);
+            followsDefaultsIni.NotInLegacy(ConfigConcepts.WorldSpaceYaw);
+            followsDefaultsIni.TrackingMode(legacy.PositionEnabled, shipped.PositionEnabled);
+            followsDefaultsIni.Setting(ConfigConcepts.LocalSmoothing, legacy.LocalSmoothing, shipped.LocalSmoothing);
+            followsDefaultsIni.Setting(ConfigConcepts.RemoteSmoothing, legacy.RemoteSmoothing, shipped.RemoteSmoothing);
+            followsDefaultsIni.Setting(ConfigConcepts.PositionLimitX, legacy.PositionLimitX, shipped.PositionLimitX);
+            followsDefaultsIni.Setting(ConfigConcepts.PositionLimitY, legacy.PositionLimitY, shipped.PositionLimitY);
+            followsDefaultsIni.Setting(ConfigConcepts.PositionLimitYDown, legacy.PositionLimitY, shipped.PositionLimitY);
+            followsDefaultsIni.Setting(ConfigConcepts.PositionLimitZ, legacy.PositionLimitZ, shipped.PositionLimitZ);
+            followsDefaultsIni.Setting(ConfigConcepts.PositionLimitZBack, legacy.PositionLimitZBack, shipped.PositionLimitZBack);
+            followsDefaultsIni.Setting(ConfigConcepts.ToggleKey, legacy.ToggleKey, shipped.ToggleKey);
+            followsDefaultsIni.Setting(ConfigConcepts.CycleTrackingModeKey, legacy.CycleTrackingModeKey, shipped.CycleTrackingModeKey);
+            followsDefaultsIni.NotInLegacy(ConfigConcepts.YawModeKey);
         }
 
         /// <summary>
         /// The keys v1.3.0 fired an action on: the configured key, unless it was None, and the
-        /// Ctrl+Shift chord that InputHandler checked beside it. A key code Unity names no key for
-        /// (a number in the .cfg, which BepInEx's enum parse accepts) is written as that number,
+        /// Ctrl+Shift chord that InputHandler checked beside it. A Ctrl, Shift or Alt key is
+        /// unbound and dropped (N3), which leaves the chord. A key code Unity names no key for (a
+        /// number in the .cfg, which BepInEx's enum parse accepts) is written as that number,
         /// which no hotkey list reads, so the owner defers the import and says which line.
         /// </summary>
-        public static string HotkeyList(KeyCode primary, KeyCode chordLetter)
+        public static string HotkeyList(KeyCode primary, KeyCode chordLetter, string key, ICollection<DroppedValue> dropped)
         {
             string chord = KeyBindings.Format(new[] { new KeyBinding(KeyModifiers.Ctrl | KeyModifiers.Shift, (int)chordLetter) });
-            if (primary == KeyCode.None) return chord;
-            return KeyText((int)primary) + ", " + chord;
-        }
-
-        private static string KeyText(int unityKeyCode)
-        {
+            string text;
             try
             {
-                return KeyBindings.Format(new[] { new KeyBinding(KeyModifiers.None, unityKeyCode) });
+                text = LegacyNormalisations.KeyCodeToBindings((int)primary, "Keybindings", key, dropped);
             }
             catch (ArgumentException)
             {
-                return unityKeyCode.ToString(CultureInfo.InvariantCulture);
+                text = ((int)primary).ToString(CultureInfo.InvariantCulture);
             }
+            return text.Length == 0 ? chord : text + ", " + chord;
         }
     }
 }

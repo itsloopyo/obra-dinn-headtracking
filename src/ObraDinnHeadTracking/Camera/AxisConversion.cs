@@ -12,5 +12,11 @@ namespace HeadTracking.Camera
         /// view as far as it always did.
         /// </summary>
         public const float PositionScale = 2.0f;
+
+        /// <summary>
+        /// Metres from the neck pivot forward to the point the tracker follows. Every published
+        /// build shipped TrackerPivotForward = 0.08, and the pivot is not a setting now.
+        /// </summary>
+        public const float TrackerPivotForward = 0.08f;
     }
 }

@@ -5,11 +5,13 @@
 ### Changed
 
 - Settings move to `BepInEx\config\CameraUnlock.ini`. Earlier versions of the mod kept these settings in `com.headtracking.obradinn.cfg`, in the same folder. The first time this version starts and finds no `CameraUnlock.ini`, it reads your settings from `com.headtracking.obradinn.cfg` and writes them into `CameraUnlock.ini`. It never changes `com.headtracking.obradinn.cfg`, and does not read it again while `CameraUnlock.ini` exists.
-- A setting that the defaults the README shows set to `default` is written as `default` when the value imported for it equals its default at that start, which is the value `Defaults.ini` gives it, or the built-in value where `Defaults.ini` gives none. It then follows `Defaults.ini`. Every other setting is written with the value imported for it.
+- A setting that the defaults the README shows set to `default` is written as `default` when you never changed it from the default earlier versions used, because `com.headtracking.obradinn.cfg` does not hold it or holds that default. It then follows `Defaults.ini`, so it takes the value `Defaults.ini` gives it, or the built-in value where `Defaults.ini` gives none, which can differ from the default earlier versions used. A setting you changed is written with the value imported for it, or as `default` where that value equals its default at that start.
 - `RotationEnabled` and `PositionEnabled` are one setting here, the tracking mode, so both are written as `default` or neither is.
 - Comments, and keys the mod never read, are not carried over. Nor are these, where your old file had them:
   - A sensitivity, scale, deadzone, response curve or axis inversion you changed from its default. Set these in your tracker instead.
   - Reticle settings, and a key that toggled the reticle.
+  - A neck pivot distance you changed from its default. The neck pivot is not a setting now.
+  - A hotkey set to Ctrl, Shift or Alt on its own. That key goes down before the key of any chord made with it, so the hotkey is left unbound, and it keeps its Ctrl+Shift chord where it has one.
 - An older version of the mod reads `com.headtracking.obradinn.cfg` and never reads `CameraUnlock.ini`, so a setting you change after updating is not in `com.headtracking.obradinn.cfg`.
 - Deleting only `CameraUnlock.ini` makes the next start read `com.headtracking.obradinn.cfg` again. To go back to the defaults, replace everything in `CameraUnlock.ini` with the defaults the README shows. Every setting they set to `default` then follows `Defaults.ini`.
 - BepInEx's ConfigurationManager no longer lists these settings. Edit `BepInEx\config\CameraUnlock.ini` with any text editor.
@@ -19,7 +21,6 @@
 - The tracking mode `Page Up` picks is saved to `CameraUnlock.ini`, and the next start begins in it. With positional tracking off at start, the first press now goes to position only; earlier versions spent that press on rotation only, which was already the state.
 - Several settings have new names and sections in `CameraUnlock.ini`: `EnabledOnStartup` is `EnableOnStartup`, `UDPPort` is `UdpPort`, `[Keybindings]` is `[Hotkeys]`, `UnlockFramerate` is under `[Display]`, and the two notification switches are under `[Notifications]`. The import carries each value over.
 - `PositionLimitY` no longer sets the downward limit as well: `PositionLimitYDown` is its own setting. The import writes your old `PositionLimitY` into both.
-- A new `CameraUnlock.ini` sets `TrackerPivotForward` to `default`, whose built-in value is 0.0, which turns the compensation off. Earlier versions started at 0.08. An imported `com.headtracking.obradinn.cfg` keeps the value it held, 0.08 unless you changed it.
 - Turning your head left and right now turns the view around the world's up axis, so it stays level while you look up or down with the mouse. Earlier versions turned it around the camera's own up axis, which tilts with the mouse's up and down. `Page Down` or `WorldSpaceYaw=false` brings that back.
 - An old file that holds a number where a key name belongs for `ToggleKey` or `CycleTrackingModeKey` (for example `ToggleKey = 2`) is not imported. The mod runs that session on the settings it read, saves nothing, says so on screen and in `BepInEx/LogOutput.log`, and tries again at the next start.
 
@@ -33,6 +34,7 @@
 ### Removed
 
 - The key that toggled the reticle, and the reticle settings. The aim dot is drawn whenever head tracking is turning the view during gameplay, as it was by default. `Page Down` and `Ctrl+Shift+H` switch the yaw mode now.
+- The neck pivot settings. A distance you changed from the default is not carried over. The mod keeps the 0.08 earlier versions shipped.
 - The sensitivity, scale, deadzone, response curve and axis inversion settings. Set these in your tracker app instead.
 - With these settings at their shipped defaults the camera moves as it did before.
 

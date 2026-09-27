@@ -120,7 +120,7 @@ namespace HeadTracking.Core
                     _config.RemoteSmoothing,
                     invertX: true, invertY: false, invertZ: false
                 ),
-                TrackerPivotForward = _config.TrackerPivotForward
+                TrackerPivotForward = AxisConversion.TrackerPivotForward
             };
             _positionInterpolator = new PositionInterpolator();
             _cameraController = new CameraController(

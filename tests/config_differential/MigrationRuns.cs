@@ -181,7 +181,6 @@ namespace HeadTracking.Tests.Differential
             line("PositionLimitYDown", LegacyStartup.Text(c.Position.LimitYDown));
             line("PositionLimitZ", LegacyStartup.Text(c.Position.LimitZ));
             line("PositionLimitZBack", LegacyStartup.Text(c.Position.LimitZBack));
-            line("TrackerPivotForward", LegacyStartup.Text(c.TrackerPivotForward));
             line("ToggleKey", c.ToggleKeyName);
             line("CycleTrackingModeKey", c.CycleTrackingModeKeyName);
             line("YawModeKey", c.YawModeKeyName);
@@ -195,7 +194,8 @@ namespace HeadTracking.Tests.Differential
     /// <summary>
     /// What the converted plugin sets up from its settings, in the same terms as
     /// <see cref="LegacyStartup"/>: rotation sensitivity is identity and position sensitivity is
-    /// the shipped 2.0, both in code now, and the reticle is drawn with no toggle.
+    /// the shipped 2.0, the neck pivot is the shipped 0.08, all in code now, and the reticle is
+    /// drawn with no toggle.
     /// </summary>
     internal static class ConvertedStartup
     {
@@ -219,7 +219,7 @@ namespace HeadTracking.Tests.Differential
             s["PositionLimits"] = LegacyStartup.Text(c.Position.LimitX) + " " + LegacyStartup.Text(c.Position.LimitY) + " "
                                   + LegacyStartup.Text(c.Position.LimitYDown) + " " + LegacyStartup.Text(c.Position.LimitZ) + " "
                                   + LegacyStartup.Text(c.Position.LimitZBack);
-            s["TrackerPivotForward"] = LegacyStartup.Text(c.TrackerPivotForward);
+            s["TrackerPivotForward"] = LegacyStartup.Text(AxisConversion.TrackerPivotForward);
             s["ToggleKey"] = c.ToggleKeyName;
             s["CycleTrackingModeKey"] = c.CycleTrackingModeKeyName;
             return s;
