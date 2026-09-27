@@ -95,6 +95,8 @@ try {
     exit 1
 }
 
+Assert-ReleaseNotBelowCanonicalSince -RepoRoot $projectDir -Version $Version
+
 $tagName = "v$Version"
 
 # Check if we're on main branch
