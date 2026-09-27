@@ -128,7 +128,7 @@ namespace HeadTracking.Core
                 _positionProcessor, _positionInterpolator);
             _cameraController.WorldSpaceYaw = _config.WorldSpaceYaw;
             _gameStateDetector = new GameStateDetector();
-            _inputHandler = new InputHandler(_config, msg => Logger.LogWarning(msg));
+            _inputHandler = new InputHandler(_config);
 
             // Initialize aim reticle
             _aimReticle = gameObject.AddComponent<IMGUIReticle>();

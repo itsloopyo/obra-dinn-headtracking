@@ -12,6 +12,7 @@
   - Reticle settings, and a key that toggled the reticle.
   - A neck pivot distance you changed from its default. The neck pivot is not a setting now.
   - A hotkey set to Ctrl, Shift or Alt on its own. That key goes down before the key of any chord made with it, so the hotkey is left unbound, and it keeps its Ctrl+Shift chord where it has one.
+  - A hotkey set to a number that is not a key code Unity names (for example `ToggleKey = 2`). The hotkey is left unbound, the log says so, and it keeps its Ctrl+Shift chord.
 - An older version of the mod reads `com.headtracking.obradinn.cfg` and never reads `CameraUnlock.ini`, so a setting you change after updating is not in `com.headtracking.obradinn.cfg`.
 - Deleting only `CameraUnlock.ini` makes the next start read `com.headtracking.obradinn.cfg` again. To go back to the defaults, replace everything in `CameraUnlock.ini` with the defaults the README shows. Every setting they set to `default` then follows `Defaults.ini`.
 - BepInEx's ConfigurationManager no longer lists these settings. Edit `BepInEx\config\CameraUnlock.ini` with any text editor.
@@ -22,7 +23,6 @@
 - Several settings have new names and sections in `CameraUnlock.ini`: `EnabledOnStartup` is `EnableOnStartup`, `UDPPort` is `UdpPort`, `[Keybindings]` is `[Hotkeys]`, `UnlockFramerate` is under `[Display]`, and the two notification switches are under `[Notifications]`. The import carries each value over.
 - `PositionLimitY` no longer sets the downward limit as well: `PositionLimitYDown` is its own setting. The import writes your old `PositionLimitY` into both.
 - Turning your head left and right now turns the view around the world's up axis, so it stays level while you look up or down with the mouse. Earlier versions turned it around the camera's own up axis, which tilts with the mouse's up and down. `Page Down` or `WorldSpaceYaw=false` brings that back.
-- An old file that holds a number where a key name belongs for `ToggleKey` or `CycleTrackingModeKey` (for example `ToggleKey = 2`) is not imported. The mod runs that session on the settings it read, saves nothing, says so on screen and in `BepInEx/LogOutput.log`, and tries again at the next start.
 
 ### Added
 
