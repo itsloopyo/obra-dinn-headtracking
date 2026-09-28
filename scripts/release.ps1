@@ -117,6 +117,18 @@ Write-Host "  3. Commit all changes" -ForegroundColor White
 Write-Host "  4. Create tag $tagName and push (triggers release workflow)" -ForegroundColor White
 Write-Host ""
 
+Write-Host "Running the full test suite..." -ForegroundColor Cyan
+Push-Location $projectDir
+try {
+    pixi run test
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: pixi run test failed. Nothing was changed." -ForegroundColor Red
+        exit 1
+    }
+} finally {
+    Pop-Location
+}
+
 # Step 1: Generate CHANGELOG from commits since last tag. This is the gate
 # that aborts when there are no user-facing commits, so run it BEFORE
 # mutating any version files or building - a failure here then leaves a
