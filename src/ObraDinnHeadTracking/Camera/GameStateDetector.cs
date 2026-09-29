@@ -25,23 +25,17 @@ namespace HeadTracking.Camera
         private static PropertyInfo _clockPlayProperty;
         private static PropertyInfo _clockRunningProperty;
 
-        // Reflection cache for Player.inputEnabled (Player type/instance from PlayerReflection)
-        private static PropertyInfo _playerInputEnabledProperty;
+        // Reflection cache for Player.inputEnabled (Player type/instance from PlayerReflection).
+        // The getter is bound to the current Player once, so the per-frame read neither goes
+        // through reflection nor boxes the result.
+        private static MethodInfo _playerInputEnabledGetter;
         private static bool _inputEnabledResolved;
+        private static object _inputEnabledPlayer;
+        private static Func<bool> _inputEnabled;
 
         // Frame-level cache: avoids repeated reflection from OnGUI shouldDraw callbacks
         private readonly PerFrameCache<bool> _inputEnabledCache =
             new PerFrameCache<bool>(GetPlayerInputEnabled);
-
-        /// <summary>
-        /// Event fired when game state changes.
-        /// </summary>
-        public event Action<GameState> StateChanged;
-
-        /// <summary>
-        /// Current detected game state.
-        /// </summary>
-        public GameState CurrentState => _currentState;
 
         /// <summary>
         /// Returns true if tracking should be active based on current game state.
@@ -63,11 +57,6 @@ namespace HeadTracking.Camera
                 return _inputEnabledCache.Get();
             }
         }
-
-        /// <summary>
-        /// Returns true if player input is currently enabled (player has camera control).
-        /// </summary>
-        public bool IsPlayerInputEnabled() => GetPlayerInputEnabled();
 
         /// <summary>
         /// Initialize the detector.
@@ -92,13 +81,14 @@ namespace HeadTracking.Camera
         /// </summary>
         public void Update()
         {
-            // Rate limit state checks to avoid per-frame overhead
-            if (Time.time - _lastCheckTime < CheckIntervalSeconds)
+            // Rate limit state checks to avoid per-frame overhead. Unscaled, because scaled time
+            // stands still at timeScale 0 and the pause would never be seen.
+            if (Time.unscaledTime - _lastCheckTime < CheckIntervalSeconds)
             {
                 return;
             }
 
-            _lastCheckTime = Time.time;
+            _lastCheckTime = Time.unscaledTime;
             UpdateState();
         }
 
@@ -111,13 +101,7 @@ namespace HeadTracking.Camera
 
         private void UpdateState()
         {
-            var newState = DetectState();
-
-            if (newState != _currentState)
-            {
-                _currentState = newState;
-                StateChanged?.Invoke(newState);
-            }
+            _currentState = DetectState();
         }
 
         /// <summary>
@@ -199,9 +183,10 @@ namespace HeadTracking.Camera
                 return;
             }
 
-            _playerInputEnabledProperty = PlayerReflection.PlayerType.GetProperty("inputEnabled",
+            var property = PlayerReflection.PlayerType.GetProperty("inputEnabled",
                 BindingFlags.Public | BindingFlags.Instance);
-            if (_playerInputEnabledProperty == null)
+            _playerInputEnabledGetter = property != null ? property.GetGetMethod(true) : null;
+            if (_playerInputEnabledGetter == null)
             {
                 HeadTrackingPlugin.Instance?.Logger.LogWarning(
                     "Player.inputEnabled property not found. Input state detection disabled.");
@@ -218,7 +203,7 @@ namespace HeadTracking.Camera
         {
             ResolveInputEnabledProperty();
 
-            if (PlayerReflection.Failed || _playerInputEnabledProperty == null)
+            if (PlayerReflection.Failed || _playerInputEnabledGetter == null)
             {
                 return true;
             }
@@ -229,7 +214,14 @@ namespace HeadTracking.Camera
                 return true;
             }
 
-            return (bool)_playerInputEnabledProperty.GetValue(playerInstance, null);
+            if (!ReferenceEquals(playerInstance, _inputEnabledPlayer))
+            {
+                _inputEnabled = (Func<bool>)Delegate.CreateDelegate(
+                    typeof(Func<bool>), playerInstance, _playerInputEnabledGetter);
+                _inputEnabledPlayer = playerInstance;
+            }
+
+            return _inputEnabled();
         }
 
         private GameState DetectState()

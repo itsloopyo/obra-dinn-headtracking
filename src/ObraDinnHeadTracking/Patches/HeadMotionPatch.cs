@@ -1,6 +1,5 @@
 using HarmonyLib;
 using HeadTracking.Core;
-using UnityEngine;
 
 namespace HeadTracking.Patches
 {
@@ -54,15 +53,16 @@ namespace HeadTracking.Patches
         /// <summary>
         /// Postfix: after HeadMotion writes its final localPosition, add our tracking offset.
         /// </summary>
-        public static void OnHeadMotionLateUpdatePostfix(MonoBehaviour __instance)
+        public static void OnHeadMotionLateUpdatePostfix()
         {
+            // Not gated on TrackingEnabled: the fade-out after the toggle queues offsets too.
             var plugin = HeadTrackingPlugin.Instance;
-            if (plugin == null || !plugin.TrackingEnabled)
+            if (plugin == null)
             {
                 return;
             }
 
-            plugin.CameraController.ApplyPendingPosition(__instance.transform);
+            plugin.CameraController.ApplyPendingPosition();
         }
     }
 }

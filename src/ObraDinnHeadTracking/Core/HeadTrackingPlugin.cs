@@ -15,6 +15,7 @@ using HeadTracking.Camera;
 using HeadTracking.Config;
 using HeadTracking.Legacy;
 using HeadTracking.Patches;
+using UnityEngine.SceneManagement;
 
 namespace HeadTracking.Core
 {
@@ -80,22 +81,10 @@ namespace HeadTracking.Core
 
             Logger.LogInfo($"{PluginName} v{PluginVersion} initializing...");
 
-            // Initialize Harmony patching
-            _harmony = new Harmony(PluginGUID);
-            _harmony.PatchAll(typeof(HeadTrackingPlugin).Assembly);
-            Logger.LogInfo("Harmony patches applied");
-
-            // Try to apply game-specific patches
-            MouseLookPatches.ApplyPatch(_harmony);
-            HeadMotionPatch.ApplyPatch(_harmony);
-
             // Built before the config loads, so the owner's status sink can reach the player
             // when the file cannot be read, imported or created.
             _notificationUI = new NotificationUI();
             LoadConfig();
-
-            // Apply framerate unlock patch if enabled
-            FrameratePatch.ApplyPatch(_harmony, _config.UnlockFramerate);
 
             // Initialize components
             _receiver = new OpenTrackReceiver();
@@ -152,13 +141,13 @@ namespace HeadTracking.Core
             _inputHandler.OnCycleTrackingModePressed += HandleCycleTrackingMode;
             _inputHandler.OnToggleYawModePressed += HandleToggleYawMode;
 
-            // Subscribe to game state changes
-            _gameStateDetector.StateChanged += OnGameStateChanged;
             _gameStateDetector.Initialize();
+            SceneManager.sceneLoaded += OnSceneLoaded;
 
-            // Subscribe to Harmony patch events
-            CameraPatches.OnSceneLoaded += OnSceneLoadedPatch;
-            CameraPatches.OnCameraChanged += OnCameraChangedPatch;
+            // Patched only once everything the patches call into exists.
+            _harmony = new Harmony(PluginGUID);
+            HeadMotionPatch.ApplyPatch(_harmony);
+            FrameratePatch.ApplyPatch(_harmony, _config.UnlockFramerate);
 
             // Start UDP receiver
             _receiver.Log = msg => Logger.LogInfo(msg);
@@ -168,9 +157,6 @@ namespace HeadTracking.Core
             TrackingEnabled = _config.EnableOnStartup;
 
             Logger.LogInfo($"{PluginName} initialized. Tracking {(TrackingEnabled ? "enabled" : "disabled")}");
-
-            if (!MouseLookPatches.PatchApplied)
-                Logger.LogWarning("MouseLook patch FAILED - head tracking will NOT work");
             Logger.LogInfo($"Listening on UDP port {_config.UdpPort}");
 
             // A config the owner could not load or create has already put its message up, and the
@@ -188,9 +174,6 @@ namespace HeadTracking.Core
             _inputHandler.CheckInput();
             _gameStateDetector.Update();
             _notificationUI.Update();
-
-            // Check for camera changes each frame
-            CameraPatches.CheckCameraChange();
 
             // Monitor connection state and show notifications on change
             MonitorConnectionState();
@@ -237,14 +220,11 @@ namespace HeadTracking.Core
             _inputHandler.OnTogglePressed -= HandleToggle;
             _inputHandler.OnCycleTrackingModePressed -= HandleCycleTrackingMode;
             _inputHandler.OnToggleYawModePressed -= HandleToggleYawMode;
-            _gameStateDetector.StateChanged -= OnGameStateChanged;
-            CameraPatches.OnSceneLoaded -= OnSceneLoadedPatch;
-            CameraPatches.OnCameraChanged -= OnCameraChangedPatch;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
 
             // Cleanup components
             _gameStateDetector.Shutdown();
             _receiver.Dispose();
-            CameraPatches.Reset();
 
             // Unpatch Harmony
             _harmony?.UnpatchSelf();
@@ -252,19 +232,18 @@ namespace HeadTracking.Core
             Instance = null;
         }
 
+        // The camera fades in and out from LateUpdate, which sees the new state next frame.
         private void HandleToggle()
         {
             TrackingEnabled = !TrackingEnabled;
 
             if (TrackingEnabled)
             {
-                _cameraController.OnTrackingEnabled();
                 _notificationUI.ShowTrackingEnabled();
                 Logger.LogInfo("Head tracking enabled");
             }
             else
             {
-                _cameraController.OnTrackingDisabled();
                 _notificationUI.ShowTrackingDisabled();
                 Logger.LogInfo("Head tracking disabled");
             }
@@ -426,28 +405,9 @@ namespace HeadTracking.Core
                 aim.y / aim.z / tanHalfFovY * UnityEngine.Screen.height * 0.5f);
         }
 
-        private void OnGameStateChanged(GameState newState)
-        {
-            if (newState == GameState.Gameplay && TrackingEnabled)
-            {
-                // Force recapture of base rotation when entering gameplay
-                _cameraController.OnTrackingEnabled();
-            }
-            else if (newState != GameState.Gameplay)
-            {
-                // Leaving gameplay - reset camera state
-                _cameraController.ResetState();
-            }
-        }
-
-        private void OnSceneLoadedPatch()
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _cameraController.ResetState();
         }
-
-        private void OnCameraChangedPatch(UnityEngine.Camera newCamera)
-        {
-        }
-
     }
 }
