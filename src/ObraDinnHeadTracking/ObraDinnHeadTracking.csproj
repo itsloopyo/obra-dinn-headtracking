@@ -31,9 +31,7 @@
   <!-- CameraUnlock shared libraries -->
   <ItemGroup>
     <ProjectReference Include="..\..\cameraunlock-core\csharp\src\CameraUnlock.Core\CameraUnlock.Core.csproj" />
-    <ProjectReference Include="..\..\cameraunlock-core\csharp\src\CameraUnlock.Core.Unity\CameraUnlock.Core.Unity.csproj">
-      <AdditionalProperties>UnityEnginePath=$(UnityEnginePath)</AdditionalProperties>
-    </ProjectReference>
+    <ProjectReference Include="..\..\cameraunlock-core\csharp\src\CameraUnlock.Core.Unity\CameraUnlock.Core.Unity.csproj" />
   </ItemGroup>
 
   <!-- Reference stubs staged into libs/ by 'pixi run setup-libs' (or a dev's real game DLLs) -->
